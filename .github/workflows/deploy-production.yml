@@ -115,7 +115,7 @@ jobs:
           DEPLOY_HOST: ${{ vars.DEPLOY_HOST }}
           SSH_PORT: ${{ vars.SSH_PORT || '22' }}
           SSH_USER: ${{ vars.SSH_USER }}
-          LANDING_HTTP_PORT: ${{ vars.LANDING_HTTP_PORT || '8002' }}
+          LANDING_HTTP_PORT: ${{ vars.LANDING_HTTP_PORT || '8005' }}
         run: |
           set -euo pipefail
           ssh -i ~/.ssh/deploy_key -p "$SSH_PORT" "$SSH_USER@$DEPLOY_HOST" \

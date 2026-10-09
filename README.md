@@ -58,7 +58,7 @@ sws.toml                static-web-server: caching, 404 page, redirects of old a
 ## Deploy
 
 Same pattern as the web app: GitHub Actions builds, pushes `ghcr.io/sportgearhub/sportgearhub-web-landing`, and runs
-it on the VPS with `docker-compose.yml`, bound to `127.0.0.1:8002` (`LANDING_HTTP_PORT`). The host nginx proxies
+it on the VPS with `docker-compose.yml`, bound to `127.0.0.1:8005` (`LANDING_HTTP_PORT`; 8000–8004 are taken on the VPS). The host nginx proxies
 `sportgearhub.ru` to it. Environment `production`: secret `SSH_KEY`; variables `DEPLOY_HOST`, `SSH_USER`,
 `SSH_PORT` (optional).
 

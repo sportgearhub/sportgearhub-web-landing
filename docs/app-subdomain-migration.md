@@ -14,10 +14,11 @@ offers, sign-in, checkout, bookings, account, seller preview). Checked against t
 
 ## Rollout (each step is reversible)
 
-1. **DNS + TLS**: an `A` record for `app.sportgearhub.ru` → the VPS; a certificate covering it (the current one is
-   issued for `sportgearhub.ru`).
-2. **nginx**: a server block for `app.sportgearhub.ru` → `127.0.0.1:8001` (the web app container, unchanged), with the
-   same headers as today's apex block. The app now answers on both hosts.
+1. **DNS + TLS** — done: `app.sportgearhub.ru` is a CNAME to the apex, and the certificate is a wildcard
+   (`*.sportgearhub.ru`, acme.sh DNS-01, renewed by cron on the VPS).
+2. **nginx** — done 2026-10-09: `/etc/nginx/conf.d/app.sportgearhub.ru.conf` proxies to `127.0.0.1:8001` (the web
+   app container, unchanged) with the shared snippets; `/preview/` drops `X-Frame-Options` so the seller console can
+   frame it (the app's CSP `frame-ancestors` still limits that to crm). The app now answers on both hosts.
 3. **Web app** (`sportgearhub-web-app`), then deploy:
    - links to the info pages go to the landing: `Footer.tsx` (`/about`, `/partners`, `/documents`),
      `SignInPage.tsx:23-29`, `AboutPage.tsx:69`; drop the public `/about`, `/partners`, `/documents` routes
@@ -26,8 +27,9 @@ offers, sign-in, checkout, bookings, account, seller preview). Checked against t
    - the catalogue accepts `?city=<slug>` (the landing's search sends it; the city lives in localStorage today).
    - `docs/seller-preview.md`: preview origin → `https://app.sportgearhub.ru`.
 4. **Landing**: create the GitHub repo `sportgearhub/sportgearhub-web-landing`, environment `production` (`SSH_KEY`,
-   `DEPLOY_HOST`, `SSH_USER`, `SSH_PORT`), push `production`. The container listens on `127.0.0.1:8002`.
-5. **nginx**: point the `sportgearhub.ru` server block at `127.0.0.1:8002`. Old app links on the apex
+   `DEPLOY_HOST`, `SSH_USER`, `SSH_PORT`), push `production`. The container listens on `127.0.0.1:8005` (8000–8004 are taken: crm, app, admin, docs,
+   dozzle).
+5. **nginx**: point the `sportgearhub.ru` server block (`/etc/nginx/conf.d/sportgearhub.ru.conf`) at `127.0.0.1:8005`. Old app links on the apex
    (`/offers/…`, `/providers/…`, `/bookings…`, `/checkout/…`, `/account…`, `/auth/…`, `/preview/…`) are 301-redirected
    to the app by the landing's `sws.toml`, query string included. Rollback: point the apex back at `8001`.
 6. **Seller console** (`sportgearhub-web-provider`): `VITE_STOREFRONT_BASE_URL` is not set anywhere, so the apex
@@ -51,5 +53,6 @@ offers, sign-in, checkout, bookings, account, seller preview). Checked against t
 
 ## Noticed on the way
 
-- The API and the seller console both default to host port `8080` (`sportgearhub-web-provider` binds it on all
-  interfaces, without `127.0.0.1:`). Fine only if a GitHub variable overrides one of them; worth a look.
+- The repos' compose defaults don't match the VPS: there the seller console runs on `127.0.0.1:8000` and the API on
+  `127.0.0.1:8080`/`8081`, through `docker-compose.override.yml` next to each `/opt/<service>/docker-compose.yml`
+  (see `/etc/nginx/conf.d/README` on the VPS).
