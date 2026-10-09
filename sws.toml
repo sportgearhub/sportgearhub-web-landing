@@ -1,0 +1,30 @@
+[general]
+cache-control-headers = false
+compression = true
+# Pre-rendered pages live at /about/index.html: serve them at /about (the canonical URL), no slash redirect.
+redirect-trailing-slash = false
+
+[advanced]
+
+# Pages and data can change with every build: always revalidate.
+[[advanced.headers]]
+source = "/**"
+headers.Cache-Control = "no-cache"
+headers.X-Content-Type-Options = "nosniff"
+headers.Referrer-Policy = "strict-origin-when-cross-origin"
+
+# Hashed build assets never change.
+[[advanced.headers]]
+source = "/assets/**"
+headers.Cache-Control = "public, max-age=31536000, immutable"
+
+# The customer app moved to app.sportgearhub.ru: links shared before the move keep working.
+[[advanced.redirects]]
+source = "/{offers,providers,bookings,checkout,account,auth,preview}/**"
+destination = "https://app.sportgearhub.ru$0"
+kind = 301
+
+[[advanced.redirects]]
+source = "/{bookings,account,checkout}"
+destination = "https://app.sportgearhub.ru$0"
+kind = 301
