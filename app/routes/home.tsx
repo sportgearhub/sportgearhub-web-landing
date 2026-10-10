@@ -18,10 +18,10 @@ import type { Route } from './+types/home';
 
 /**
  * Runs at build time (pre-rendering): the page ships with the catalogue as it was then; CI rebuilds it on a schedule.
- * `products/options` gives the activities and categories with counts; then, for every activity with offers, its newest
- * offer (a cover when there's no curated photo) and for every stocked category its cheapest few (the «от» price and a
- * photo). `catalog/categories` adds the whole tree, empty kinds included, for «Весь каталог». A handful of requests per build, all public. If the API is down the page still builds: the activity cards
- * fall back to the curated photos alone.
+ * `products/options` gives the activities and categories with counts; for every stocked category its cheapest few give
+ * the «от» price and a photo; `catalog/categories` adds the whole tree, empty kinds included, for the drifting
+ * catalogue. A handful of public requests per build. If the API is down the page still builds: the activity cards fall
+ * back to the curated activities alone.
  */
 export async function loader() {
   const [options, products, tree] = await Promise.all([publicApi.options(), publicApi.products({ pageSize: 12 }), publicApi.tree()]);
@@ -30,14 +30,11 @@ export async function loader() {
   const activities = (options?.activities ?? []).filter((a) => a.count > 0);
 
   const sample = async (key: string, query: Parameters<typeof publicApi.products>[0]) => [key, sampleOf(await publicApi.products(query), config.apiBaseUrl)] as const;
-  const [byActivity, byCategory] = await Promise.all([
-    Promise.all(activities.map((a) => sample(a.slug, { pageSize: 1, activity: a.slug }))).then(Object.fromEntries),
-    Promise.all(categories.map((c) => sample(c.slug, { pageSize: 4, sort: 'price_asc', category: c.slug }))).then(Object.fromEntries),
-  ]);
+  const byCategory = Object.fromEntries(await Promise.all(categories.map((c) => sample(c.slug, { pageSize: 4, sort: 'price_asc', category: c.slug }))));
 
   const cards: ActivityCard[] = options
-    ? activityCards(activities, categories, { byActivity, byCategory }, SHOWCASE, season)
-    : SHOWCASE.map((s) => ({ slug: s.activity, title: s.title, count: 0, imageUrl: s.imageUrl, hint: s.hint, categories: [] }));
+    ? activityCards(activities, categories, { byCategory }, SHOWCASE, season)
+    : SHOWCASE.map((s) => ({ slug: s.activity, title: s.title, count: 0, hint: s.hint, categories: [] }));
 
   return {
     activities: cards,

@@ -42,13 +42,12 @@ export type ShowcaseCard = { kind: 'showcase'; id: string; title: string; hint: 
 /** A category inside an activity card: a real offer's photo and the lowest price, both from the API. */
 export type CategoryRow = { slug: string; title: string; count: number; from: number | null; imageUrl: string | null };
 
-/** «Чем займёмся?»: an activity with offers, its cover, and the stocked categories it opens into. */
+/** «Чем займёмся?»: an activity with offers (its cover is drawn from its icon and hue) and its stocked categories. */
 export type ActivityCard = {
   slug: string;
   title: string;
   count: number;
-  /** Curated (showcase) when there is one, else a real offer from the activity. */
-  imageUrl: string | null;
+  /** A line from the curated showcase, shown while the count is too small to show. */
   hint: string | null;
   categories: CategoryRow[];
 };
@@ -121,13 +120,12 @@ export const liveCategories = (categories: Category[]): Category[] => categories
 /**
  * «Чем займёмся?»: every activity with offers, in season first, then by how much it has. Each lists its stocked
  * categories (a category can sit under several), with a real offer's photo and the cheapest price from `byCategory`.
- * The cover is the curated photo for the activity, else a real offer's (`byActivity`). Nothing is invented: an activity
- * or category without offers isn't shown.
+ * Nothing is invented: an activity or category without offers isn't shown.
  */
 export function activityCards(
   activities: (Activity & { count: number })[],
   categories: Category[],
-  samples: { byActivity: Record<string, Sample | undefined>; byCategory: Record<string, Sample | undefined> },
+  samples: { byCategory: Record<string, Sample | undefined> },
   showcase: ShowcaseCard[],
   season: SeasonKey,
 ): ActivityCard[] {
@@ -147,7 +145,6 @@ export function activityCards(
         slug: a.slug,
         title: a.title,
         count: a.count,
-        imageUrl: curated?.imageUrl ?? samples.byActivity[a.slug]?.imageUrl ?? null,
         hint: curated?.hint ?? null,
         categories: rows(a.slug),
       };

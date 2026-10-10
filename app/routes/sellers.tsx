@@ -53,7 +53,7 @@ export async function loader() {
 }
 
 export const meta: Route.MetaFunction = () => [
-  ...seo({ title: 'Продавцам', description: SELLERS.subtitle, path: '/sellers' }),
+  ...seo({ title: 'Продавцам', description: SELLERS.subtitle, path: '/sellers', image: 'sellers' }),
   {
     'script:ld+json': {
       '@context': 'https://schema.org',

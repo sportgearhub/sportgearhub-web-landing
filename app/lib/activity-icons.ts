@@ -61,3 +61,31 @@ const ACTIVITY_TONES: Record<string, Tone> = {
 };
 
 export const activityTone = (slug: string): Tone => ACTIVITY_TONES[slug] ?? TONES.slate;
+
+/** One hue per activity (oklch), as the app's backgrounds use (sportgearhub-web-app: activity-themes.ts → HUES). */
+const ACTIVITY_HUES: Record<string, number> = {
+  winter_sports: 235,
+  water_sports: 205,
+  cycling: 160,
+  hiking_trekking: 150,
+  camping: 180,
+  tourism: 85,
+  beach_leisure: 75,
+  fishing: 245,
+  extreme_sports: 50,
+  motorsports: 40,
+  fitness: 10,
+  yoga: 300,
+  kids_active_leisure: 300,
+  active_leisure: 125,
+  e_transport: 275,
+};
+
+/** An activity's cover: a deep-to-bright gradient in its hue with a soft light glow (brand blue for one we don't know). */
+export function activityGradient(slug: string): string {
+  const h = ACTIVITY_HUES[slug] ?? 262;
+  return [
+    'radial-gradient(18rem 12rem at 85% 0%, oklch(1 0 0 / 0.22), transparent 70%)',
+    `linear-gradient(140deg, oklch(0.62 0.15 ${h}), oklch(0.48 0.16 ${h + 20}) 55%, oklch(0.36 0.12 ${h + 40}))`,
+  ].join(', ');
+}

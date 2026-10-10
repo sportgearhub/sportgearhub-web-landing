@@ -44,10 +44,7 @@ describe('activityCards', () => {
     { slug: 'yoga', title: 'Йога', count: 0 },
   ];
   const showcase: ShowcaseCard[] = [{ kind: 'showcase', id: 'w', title: 'Зимние выходные', hint: 'Лыжи на сезон', activity: 'winter_sports', imageUrl: '/curated.jpg' }];
-  const samples = {
-    byActivity: { tourism: { from: 900, imageUrl: '/tour.jpg' }, cycling: { from: 500, imageUrl: '/bike.jpg' } },
-    byCategory: { bicycle: { from: 500, imageUrl: '/b.jpg' }, skis: { from: 900, imageUrl: '/s.jpg' } },
-  };
+  const samples = { byCategory: { bicycle: { from: 500, imageUrl: '/b.jpg' }, skis: { from: 900, imageUrl: '/s.jpg' } } };
 
   it('lists activities with offers, each with its stocked categories, price and photo from the samples', () => {
     const cards = activityCards(activities, categories, samples, showcase, 'offseason');
@@ -59,10 +56,10 @@ describe('activityCards', () => {
     expect(cards[1]!.categories[0]).toEqual({ slug: 'skis', title: 'skis', count: 4, from: 900, imageUrl: '/s.jpg' });
   });
 
-  it('covers an activity with its curated photo first, else a real offer’s', () => {
+  it('takes an activity’s hint from the curated showcase, when there is one', () => {
     const cards = activityCards(activities, categories, samples, showcase, 'offseason');
-    expect(cards.find((c) => c.slug === 'winter_sports')).toMatchObject({ imageUrl: '/curated.jpg', hint: 'Лыжи на сезон' });
-    expect(cards.find((c) => c.slug === 'tourism')).toMatchObject({ imageUrl: '/tour.jpg', hint: null });
+    expect(cards.find((c) => c.slug === 'winter_sports')!.hint).toBe('Лыжи на сезон');
+    expect(cards.find((c) => c.slug === 'tourism')!.hint).toBeNull();
   });
 
   it('puts the season’s activities first', () => {

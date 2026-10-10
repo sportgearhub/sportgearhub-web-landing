@@ -1,3 +1,4 @@
+import { Mail, Phone } from 'lucide-react';
 import { Link } from 'react-router';
 import { appLink, config } from '~/lib/config';
 import { CONTACTS, LEGAL_DOCUMENTS } from '~/lib/content';
@@ -52,10 +53,12 @@ export function SiteFooter() {
           </Link>
         </FooterColumn>
         <FooterColumn title="Контакты">
-          <a className={linkClass} href={`tel:${CONTACTS.phone}`}>
+          <a className={`${linkClass} inline-flex items-center gap-2`} href={`tel:${CONTACTS.phone}`}>
+            <Phone className="size-4 shrink-0" aria-hidden />
             {CONTACTS.phoneLabel}
           </a>
-          <a className={`${linkClass} break-all`} href={`mailto:${CONTACTS.email}`}>
+          <a className={`${linkClass} inline-flex items-center gap-2 break-all`} href={`mailto:${CONTACTS.email}`}>
+            <Mail className="size-4 shrink-0" aria-hidden />
             {CONTACTS.email}
           </a>
           <SocialLinks className="mt-2" />

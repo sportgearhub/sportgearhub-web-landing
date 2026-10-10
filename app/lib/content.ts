@@ -6,7 +6,7 @@ export const HERO = {
   title: 'Прокат спортивного снаряжения',
   subtitle: 'Велосипеды, SUP-доски, лыжи и походное снаряжение от проверенных прокатов. Бронь за пару минут, оплата онлайн.',
   promises: ['Онлайн-бронь', 'Проверенные прокаты', 'Карта или СБП'],
-  /** Also the Open Graph picture. */
+  /** The hero's picture while there are no real offers to show (link previews use public/og/, see seo.ts). */
   image: 'https://images.pexels.com/photos/1571939/pexels-photo-1571939.jpeg?auto=compress&cs=tinysrgb&w=1600',
 };
 
