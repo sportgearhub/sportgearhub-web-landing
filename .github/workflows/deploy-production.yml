@@ -71,7 +71,7 @@ jobs:
           VITE_SITE_URL: ${{ vars.VITE_SITE_URL || 'https://sportgearhub.ru' }}
           VITE_APP_URL: ${{ vars.VITE_APP_URL || 'https://app.sportgearhub.ru' }}
           VITE_API_BASE_URL: ${{ vars.VITE_API_BASE_URL || 'https://api.sportgearhub.ru' }}
-          VITE_PROVIDER_URL: ${{ vars.VITE_PROVIDER_URL || 'https://crm.sportgearhub.ru' }}
+          VITE_PROVIDER_URL: ${{ vars.VITE_PROVIDER_URL || 'https://seller.sportgearhub.ru' }}
         run: npm run build
 
       - name: Login to GHCR

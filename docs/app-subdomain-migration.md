@@ -18,7 +18,7 @@ offers, sign-in, checkout, bookings, account, seller preview). Checked against t
    (`*.sportgearhub.ru`, acme.sh DNS-01, renewed by cron on the VPS).
 2. **nginx** — done 2026-10-09: `/etc/nginx/conf.d/app.sportgearhub.ru.conf` proxies to `127.0.0.1:8001` (the web
    app container, unchanged) with the shared snippets; `/preview/` drops `X-Frame-Options` so the seller console can
-   frame it (the app's CSP `frame-ancestors` still limits that to crm). The app now answers on both hosts.
+   frame it (the app's CSP `frame-ancestors` limits that to the seller console: seller.sportgearhub.ru, and crm.sportgearhub.ru while it moves). The app now answers on both hosts.
 3. **Web app** (`sportgearhub-web-app`), then deploy:
    - links to the info pages go to the landing: `Footer.tsx` (`/about`, `/partners`, `/documents`),
      `SignInPage.tsx:23-29`, `AboutPage.tsx:69`; drop the public `/about`, `/partners`, `/documents` routes
@@ -35,7 +35,7 @@ offers, sign-in, checkout, bookings, account, seller preview). Checked against t
 6. **Seller console** (`sportgearhub-web-provider`): `VITE_STOREFRONT_BASE_URL` is not set anywhere, so the apex
    fallback in `providerStatus.ts:68` ships. Set it to `https://app.sportgearhub.ru` (deploy workflow + `vite-env.d.ts`).
    Its preview iframe loads `/offers/{id}` (`ProductDetailPage.tsx:550,572`), not `/preview/products/{id}`; only
-   `/preview/**` allows framing by crm (`sws.toml`), so switch the iframe to the preview route while there.
+   `/preview/**` allows framing by the seller console (`sws.toml`: seller.sportgearhub.ru, and crm while it moves), so switch the iframe to the preview route while there.
 
 ## Decisions to make
 

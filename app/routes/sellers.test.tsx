@@ -34,7 +34,7 @@ describe('Sellers', () => {
     renderSellers();
     const signUps = screen.getAllByRole('link', { name: /Подключить прокат/ });
     expect(signUps.length).toBeGreaterThanOrEqual(2);
-    for (const link of signUps) expect(link).toHaveAttribute('href', 'https://crm.sportgearhub.ru');
+    for (const link of signUps) expect(link).toHaveAttribute('href', 'https://seller.sportgearhub.ru');
   });
 
   it('walks through the seller’s day, one step per journey item', () => {

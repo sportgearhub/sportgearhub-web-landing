@@ -27,7 +27,7 @@ Settings are build-time Vite variables with production defaults (see `.env.examp
 | `VITE_SITE_URL` | `https://sportgearhub.ru` | canonical URLs, Open Graph, sitemap |
 | `VITE_APP_URL` | `https://app.sportgearhub.ru` | every link into the app (catalogue, offers, sign-in) |
 | `VITE_API_BASE_URL` | `https://api.sportgearhub.ru` | build-time reads, product photo URLs |
-| `VITE_PROVIDER_URL` | `https://crm.sportgearhub.ru` | seller sign-up and console |
+| `VITE_PROVIDER_URL` | `https://seller.sportgearhub.ru` | seller sign-up and console |
 
 ## How the data gets in
 

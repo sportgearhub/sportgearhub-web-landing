@@ -28,7 +28,7 @@ export function BrowserFrame({ className, children }: { className?: string; chil
         {['bg-[#ff5f57]', 'bg-[#febc2e]', 'bg-[#28c840]'].map((c) => (
           <span key={c} className={cn('size-2.5 rounded-full', c)} />
         ))}
-        <span className="mx-auto rounded-md bg-card px-3 py-0.5 text-[10px] text-muted-foreground">crm.sportgearhub.ru</span>
+        <span className="mx-auto rounded-md bg-card px-3 py-0.5 text-[10px] text-muted-foreground">seller.sportgearhub.ru</span>
       </div>
       {children}
     </div>

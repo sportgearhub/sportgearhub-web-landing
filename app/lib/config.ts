@@ -10,7 +10,7 @@ export const config = {
   /** Public API, read at build time only (the browser never calls it from here). */
   apiBaseUrl: trim(env.VITE_API_BASE_URL || 'https://api.sportgearhub.ru'),
   /** Seller console: where rentals sign up and work. */
-  providerUrl: trim(env.VITE_PROVIDER_URL || 'https://crm.sportgearhub.ru'),
+  providerUrl: trim(env.VITE_PROVIDER_URL || 'https://seller.sportgearhub.ru'),
   docsUrl: 'https://docs.sportgearhub.ru',
 };
 
