@@ -1,20 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { appLink } from './config';
-import {
-  activitiesOf,
-  inSeasonFirst,
-  liveCollections,
-  plural,
-  priceFrom,
-  resolveMediaUrl,
-  seasonOf,
-  sellersOf,
-  toProductCards,
-  type Category,
-  type ProductCard,
-  type ShowcaseCard,
-  type WireProduct,
-} from './catalog';
+import { activityCards, gearOf, plural, resolveMediaUrl, sampleOf, seasonOf, taxonomyOf, toProductCards, type Category, type ShowcaseCard, type WireProduct, type WireTreeCategory } from './catalog';
 
 const API = 'https://api.example';
 
@@ -22,51 +8,17 @@ const wire = (id: string, extra: Partial<WireProduct> = {}): WireProduct => ({
   product_id: id,
   title: `Товар ${id}`,
   price: 500,
-  media_preview_url: `/api/v1/media/${id}`,
-  images: [],
-  category: { slug: 'bicycle', title: 'Велосипед' },
-  seller: { seller_id: 's-1', slug: null, display_name: 'Прокат', description: null },
+  images: [{ url: `/api/v1/media/${id}`, sort_order: 0 }],
   ...extra,
 });
-
-const card = (id: string, extra: Partial<ProductCard> = {}): ProductCard => ({
-  kind: 'product',
-  id,
-  title: id,
-  price: 100,
-  imageUrl: `/${id}.jpg`,
-  images: [`/${id}.jpg`],
-  categorySlug: 'bicycle',
-  categoryTitle: 'Велосипед',
-  seller: null,
-  ...extra,
-});
-
-const categories: Category[] = [
-  { slug: 'sup', title: 'SUP', count: 1, activities: [{ slug: 'water_sports', title: 'Водный спорт' }, { slug: 'tourism', title: 'Туризм' }] },
-  { slug: 'skis', title: 'Лыжи', count: 2, activities: [{ slug: 'winter_sports', title: 'Зимний спорт' }, { slug: 'tourism', title: 'Туризм' }] },
-  { slug: 'empty', title: 'Пусто', count: 0, activities: [{ slug: 'active_leisure', title: 'Активный отдых' }] },
-];
 
 describe('toProductCards', () => {
-  it('takes the first photo by order, resolves API media paths, links the shop by slug or id, and drops products with no photo', () => {
-    const cards = toProductCards(
-      [
-        wire('a', { images: [{ url: '/m/2', sort_order: 2 }, { url: '/m/1', sort_order: 1 }] }),
-        wire('b', { media_preview_url: 'https://cdn.example/b.jpg', seller: { seller_id: 's-2', slug: 'velo', display_name: 'Вело', description: null } }),
-        wire('c', { media_preview_url: null }),
-      ],
-      API,
-    );
-    expect(cards.map((c) => c.imageUrl)).toEqual(['https://api.example/m/1', 'https://cdn.example/b.jpg']);
-    expect(cards.map((c) => c.seller?.key)).toEqual(['s-1', 'velo']);
-  });
-
-  it('keeps every photo in order for the card carousel, without repeats, up to five', () => {
+  it('keeps every photo in order, resolved, without repeats, up to five; drops products with none', () => {
     const images = [3, 1, 2, 2, 4, 5, 6].map((n, i) => ({ url: `/m/${n}`, sort_order: n * 10 + i }));
-    const [cardA] = toProductCards([wire('a', { images })], API);
-    expect(cardA!.images).toEqual([1, 2, 3, 4, 5].map((n) => `${API}/m/${n}`));
-    expect(toProductCards([wire('b')], API)[0]!.images).toEqual([`${API}/api/v1/media/b`]);
+    const cards = toProductCards([wire('a', { images }), wire('b', { images: [] }), wire('c', { images: null })], API);
+    expect(cards.map((c) => c.id)).toEqual(['a']);
+    expect(cards[0]!.images).toEqual([1, 2, 3, 4, 5].map((n) => `${API}/m/${n}`));
+    expect(cards[0]!.imageUrl).toBe(`${API}/m/1`);
   });
 
   it('leaves absolute URLs alone', () => {
@@ -74,42 +26,85 @@ describe('toProductCards', () => {
   });
 });
 
-describe('arranging', () => {
-  it('gives a category the lowest priced offer, or nothing', () => {
-    const products = [card('a', { price: 900 }), card('b', { price: 500 }), card('c', { price: null })];
-    expect(priceFrom(products, 'bicycle')).toBe(500);
-    expect(priceFrom(products, 'sup')).toBeNull();
+describe('sampleOf', () => {
+  it('takes the lowest price among the offers and the first photo, even when the cheapest has none', () => {
+    expect(sampleOf([wire('a', { price: 300, images: [] }), wire('b', { price: 450 })], API)).toEqual({ from: 300, imageUrl: `${API}/api/v1/media/b` });
+    expect(sampleOf([], API)).toBeUndefined();
+    expect(sampleOf(null, API)).toBeUndefined();
+  });
+});
+
+describe('activityCards', () => {
+  const cat = (slug: string, count: number, activities: string[]): Category => ({ slug, title: slug, count, activities: activities.map((a) => ({ slug: a, title: a })) });
+  const categories = [cat('bicycle', 1, ['cycling', 'tourism']), cat('skis', 4, ['winter_sports', 'tourism']), cat('helmet', 0, ['winter_sports'])];
+  const activities = [
+    { slug: 'tourism', title: 'Туризм', count: 5 },
+    { slug: 'winter_sports', title: 'Зимний спорт', count: 4 },
+    { slug: 'cycling', title: 'Велоспорт', count: 1 },
+    { slug: 'yoga', title: 'Йога', count: 0 },
+  ];
+  const showcase: ShowcaseCard[] = [{ kind: 'showcase', id: 'w', title: 'Зимние выходные', hint: 'Лыжи на сезон', activity: 'winter_sports', imageUrl: '/curated.jpg' }];
+  const samples = {
+    byActivity: { tourism: { from: 900, imageUrl: '/tour.jpg' }, cycling: { from: 500, imageUrl: '/bike.jpg' } },
+    byCategory: { bicycle: { from: 500, imageUrl: '/b.jpg' }, skis: { from: 900, imageUrl: '/s.jpg' } },
+  };
+
+  it('lists activities with offers, each with its stocked categories, price and photo from the samples', () => {
+    const cards = activityCards(activities, categories, samples, showcase, 'offseason');
+    expect(cards.map((c) => [c.slug, c.categories.map((r) => r.slug)])).toEqual([
+      ['tourism', ['bicycle', 'skis']],
+      ['winter_sports', ['skis']],
+      ['cycling', ['bicycle']],
+    ]);
+    expect(cards[1]!.categories[0]).toEqual({ slug: 'skis', title: 'skis', count: 4, from: 900, imageUrl: '/s.jpg' });
   });
 
-  it('puts offers in season first', () => {
-    const products = [card('bike', { categorySlug: 'bike' }), card('skis', { categorySlug: 'skis' }), card('sup', { categorySlug: 'sup' })];
-    expect(inSeasonFirst(products, categories, 'winter').map((p) => p.id)).toEqual(['skis', 'bike', 'sup']);
-    expect(inSeasonFirst(products, categories, 'offseason').map((p) => p.id)).toEqual(['bike', 'skis', 'sup']);
+  it('covers an activity with its curated photo first, else a real offer’s', () => {
+    const cards = activityCards(activities, categories, samples, showcase, 'offseason');
+    expect(cards.find((c) => c.slug === 'winter_sports')).toMatchObject({ imageUrl: '/curated.jpg', hint: 'Лыжи на сезон' });
+    expect(cards.find((c) => c.slug === 'tourism')).toMatchObject({ imageUrl: '/tour.jpg', hint: null });
+  });
+
+  it('puts the season’s activities first', () => {
+    expect(activityCards(activities, categories, samples, showcase, 'winter').map((c) => c.slug)).toEqual(['winter_sports', 'tourism', 'cycling']);
+    expect(activityCards(activities, categories, samples, showcase, 'summer')[0]!.slug).toBe('cycling');
   });
 
   it('knows the season of a date', () => {
     expect([new Date(2026, 6, 1), new Date(2026, 0, 10), new Date(2026, 9, 9)].map(seasonOf)).toEqual(['summer', 'winter', 'offseason']);
   });
+});
 
-  it('counts offers per shop, most first', () => {
-    const shop = (key: string) => ({ key, name: key, description: null });
-    const sellers = sellersOf([card('a', { seller: shop('x') }), card('b', { seller: shop('y') }), card('c', { seller: shop('y') }), card('d')]);
-    expect(sellers.map((s) => [s.key, s.offers])).toEqual([
-      ['y', 2],
-      ['x', 1],
+describe('taxonomyOf', () => {
+  const node = (id: string, slug: string, parent: string | null, activities: string[]): WireTreeCategory => ({
+    category_id: id,
+    parent_id: parent,
+    slug,
+    name: slug,
+    activities: activities.map((a) => ({ slug: a, title: a })),
+  });
+  const tree = [
+    node('g1', 'winter_gear', null, ['winter_sports']),
+    node('c1', 'skis', 'g1', ['winter_sports', 'tourism']),
+    node('c2', 'snowboard', 'g1', ['winter_sports']),
+    node('c3', 'tent', null, ['tourism', 'camping']),
+  ];
+
+  it('lists every activity with its kinds of gear (groups are headings, not gear), counted from the live list, busiest first', () => {
+    const taxonomy = taxonomyOf(tree, [{ slug: 'skis', title: 'skis', count: 4, activities: [] }]);
+    expect(taxonomy.map((a) => [a.slug, a.count, a.categories.map((c) => [c.slug, c.count])])).toEqual([
+      ['winter_sports', 4, [['skis', 4], ['snowboard', 0]]],
+      ['tourism', 4, [['skis', 4], ['tent', 0]]],
+      ['camping', 0, [['tent', 0]]],
     ]);
   });
 
-  it('keeps only collections whose activity has offers now', () => {
-    const tile = (activity: string): ShowcaseCard => ({ kind: 'showcase', id: activity, title: activity, hint: '', imageUrl: '', activity });
-    expect(liveCollections([tile('water_sports'), tile('cycling'), tile('active_leisure'), tile('tourism')], categories).map((c) => c.id)).toEqual([
-      'water_sports',
-      'tourism',
+  it('gives every kind of gear once, under the first activity listing it', () => {
+    expect(gearOf(taxonomyOf(tree, [])).map((g) => [g.slug, g.activity])).toEqual([
+      ['skis', 'winter_sports'],
+      ['snowboard', 'winter_sports'],
+      ['tent', 'tourism'],
     ]);
-  });
-
-  it('lists each activity once', () => {
-    expect(activitiesOf(categories).map((a) => a.slug)).toEqual(['water_sports', 'tourism', 'winter_sports', 'active_leisure']);
   });
 });
 

@@ -177,7 +177,7 @@ function BookingsTable({ withFilters = false, className }: { withFilters?: boole
           ].map(([label, count, active]) => (
             <span
               key={String(label)}
-              className={cn('rounded-full px-2.5 py-1 text-[10px] font-semibold', active ? 'bg-foreground text-background' : 'bg-muted text-muted-foreground')}
+              className={cn('rounded-full px-2.5 py-1 text-[10px] font-semibold', active ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground')}
             >
               {label} · {count}
             </span>

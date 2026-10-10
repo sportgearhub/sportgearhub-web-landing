@@ -6,8 +6,37 @@ import Home from './home';
 type HomeProps = Parameters<typeof Home>[0];
 
 const loaderData = {
-  categories: [{ slug: 'bicycle', title: 'Велосипед', count: 1, activities: [{ slug: 'cycling', title: 'Велоспорт' }] }],
-  products: [
+  activities: [
+    {
+      slug: 'winter_sports',
+      title: 'Зимний спорт',
+      count: 4,
+      imageUrl: 'https://img.example/winter.jpg',
+      hint: 'Лыжи и сноуборды на сезон',
+      categories: [{ slug: 'skis', title: 'Лыжи', count: 4, from: 900, imageUrl: 'https://img.example/skis.jpg' }],
+    },
+    {
+      slug: 'cycling',
+      title: 'Велоспорт',
+      count: 1,
+      imageUrl: 'https://img.example/bike.jpg',
+      hint: null,
+      categories: [{ slug: 'bicycle', title: 'Велосипед', count: 1, from: 50, imageUrl: 'https://img.example/b.jpg' }],
+    },
+  ],
+  taxonomy: [
+    {
+      slug: 'winter_sports',
+      title: 'Зимний спорт',
+      count: 4,
+      categories: [
+        { slug: 'skis', title: 'Лыжи', count: 4 },
+        { slug: 'snowboard', title: 'Сноуборд', count: 0 },
+      ],
+    },
+    { slug: 'fishing', title: 'Рыбалка', count: 0, categories: [{ slug: 'fishing_rod', title: 'Удочка', count: 0 }] },
+  ],
+  offers: [
     {
       kind: 'product' as const,
       id: 'p1',
@@ -15,12 +44,8 @@ const loaderData = {
       price: 900,
       imageUrl: 'https://img.example/p1.jpg',
       images: ['https://img.example/p1.jpg', 'https://img.example/p1-2.jpg'],
-      categorySlug: 'bicycle',
-      categoryTitle: 'Велосипед',
-      seller: { key: 'velo', name: 'Велопрокат', description: null },
     },
   ],
-  season: 'offseason' as const,
 };
 
 function renderHome() {
@@ -45,25 +70,37 @@ describe('Home', () => {
     const link = within(offers).getByRole('link', { name: /Шоссейный велосипед/ });
     expect(link).toHaveAttribute('href', 'https://app.sportgearhub.ru/offers/p1');
     expect(link).toHaveTextContent('от 900');
-    expect(link).not.toHaveTextContent('Велопрокат');
     expect(link.querySelectorAll('img')).toHaveLength(3); // both photos, plus the first again for the endless loop
   });
 
-  it('shows the category price without a count while offers are few', () => {
+  it('shows each activity with offers, opening the app on it, and its categories with real prices', () => {
     renderHome();
-    const categories = screen.getByRole('region', { name: 'Что взять в прокат' });
-    const tile = within(categories).getByRole('link', { name: /Велосипед/ });
-    expect(tile).toHaveAttribute('href', 'https://app.sportgearhub.ru/?category=bicycle');
-    expect(tile).toHaveTextContent('от 900');
-    expect(tile).not.toHaveTextContent('предложени');
+    const section = screen.getByRole('region', { name: 'Чем займёмся?' });
+    expect(within(section).getByRole('link', { name: /Зимний спорт/ })).toHaveAttribute('href', 'https://app.sportgearhub.ru/?activity=winter_sports');
+    const skis = within(section).getByRole('link', { name: /Лыжи/ });
+    expect(skis).toHaveAttribute('href', 'https://app.sportgearhub.ru/?category=skis&activity=winter_sports');
+    expect(skis).toHaveTextContent('от 900');
+    expect(skis).toHaveTextContent('4 предложения');
   });
 
-  it('offers collections only for activities that have offers, and the shop behind them', () => {
+  it('shows counts only from three up', () => {
     renderHome();
-    const collections = screen.getByRole('region', { name: 'Идеи на выходные' });
-    expect(within(collections).getAllByRole('link')).toHaveLength(1);
-    expect(within(collections).getByRole('link', { name: /На велосипеде/ })).toHaveAttribute('href', 'https://app.sportgearhub.ru/?activity=cycling');
-    expect(within(screen.getByRole('region', { name: 'Прокаты-партнёры' })).getByRole('link', { name: /Велопрокат/ })).toHaveAttribute('href', 'https://app.sportgearhub.ru/providers/velo');
+    const section = screen.getByRole('region', { name: 'Чем займёмся?' });
+    const bike = within(section).getByRole('link', { name: /Велосипед/ });
+    expect(bike).toHaveTextContent('от 50');
+    expect(bike).not.toHaveTextContent('предложени');
+    expect(within(section).getByRole('link', { name: /Велоспорт/ })).toHaveTextContent('Смотреть предложения');
+  });
+
+  it('lists the whole catalogue, linking only what can be booked now', () => {
+    renderHome();
+    const all = screen.getByRole('region', { name: 'Найдите что угодно' });
+    expect(all).toHaveTextContent('3 вида снаряжения в 2 занятиях');
+    // Each row is there twice (the loop); only the first copy is reachable.
+    expect(within(all).getAllByRole('link', { name: /Лыжи/ })).toHaveLength(1);
+    expect(within(all).getByRole('link', { name: /Лыжи/ })).toHaveAttribute('href', 'https://app.sportgearhub.ru/?category=skis');
+    expect(within(all).queryByRole('link', { name: /Сноуборд|Удочка/ })).toBeNull();
+    expect(within(all).getAllByText('Удочка').length).toBeGreaterThan(0);
   });
 
   it('answers questions without JS', () => {

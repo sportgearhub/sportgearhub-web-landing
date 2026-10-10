@@ -1,7 +1,7 @@
 # Sportgearhub Web Landing
 
-The public site at **sportgearhub.ru**: the landing (categories, real offers, collections, rental partners, how it
-works, guarantees, FAQ), «О сервисе»,
+The public site at **sportgearhub.ru**: the landing (activities with their categories, real offers, how it works,
+guarantees, FAQ), «О сервисе»,
 «Продавцам», «Документы». Everything you *do* — browse the catalogue, open an offer, sign in, book — happens in the
 customer app at **app.sportgearhub.ru**; every action here links there.
 
@@ -31,8 +31,9 @@ Settings are build-time Vite variables with production defaults (see `.env.examp
 
 ## How the data gets in
 
-`app/routes/home.tsx` has a `loader` that runs **at build time** (`app/lib/api.server.ts`): rental categories
-and the newest products. The browser never calls the API from this site. If the API is down during a build, the page
+`app/routes/home.tsx` has a `loader` that runs **at build time** (`app/lib/api.server.ts`): activities and categories
+with live counts (`/products/options`), the newest offers, and for each activity and stocked category a small sample
+(a cover photo, the cheapest price). The browser never calls the API from this site. If the API is down during a build, the page
 still builds with curated content (a warning in the log) instead of failing.
 
 Because the data is baked in, production is rebuilt every 6 hours by a schedule in `deploy-production.yml`, besides

@@ -1,36 +1,30 @@
 /**
  * Public catalogue data as the landing uses it: the API's wire shapes (snake_case, read at build time) mapped to small
- * camelCase cards, and the pure logic that arranges them (the inventory wall, seasons). No fetching here.
+ * camelCase shapes, and the pure logic that arranges them (activities and their categories, seasons). No fetching here.
  */
 
 // ---- wire shapes (only the fields the landing reads) --------------------------------------------------------------
 
-export type WireCategory = {
-  slug: string;
-  title: string;
-  count: number;
-  activities: { slug: string; title: string }[];
-};
+export type WireActivity = { slug: string; title: string };
 
-export type WireCity = { city_id: string; name: string; slug: string };
+/** A category with its live count (`/products/options`); only stocked ones matter here. */
+export type WireCategory = { slug: string; title: string; count: number; activities: WireActivity[] };
 
-export type WireProduct = {
-  product_id: string;
-  title: string;
-  price: number | null;
-  media_preview_url: string | null;
-  images?: { url: string; sort_order: number }[] | null;
-  category: { slug: string; title: string } | null;
-  seller: { seller_id: string; slug: string | null; display_name: string; description: string | null } | null;
-};
+/** `GET /products/options`: categories and activities with counts for the scope (and sort orders, unused here). */
+export type WireOptions = { categories: WireCategory[]; activities: (WireActivity & { count: number })[] };
+
+/** `GET /catalog/categories`: the platform's whole tree, empty categories included, no counts; groups via `parent_id`. */
+export type WireTreeCategory = { category_id: string; parent_id: string | null; slug: string; name: string; activities: WireActivity[] };
+
+/** A `/products` item (since 2026-10-10): what a tile draws, nothing else. */
+export type WireProduct = { product_id: string; title: string; price: number | null; images?: { url: string; sort_order: number }[] | null };
 
 // ---- landing shapes ------------------------------------------------------------------------------------------------
 
-export type Category = { slug: string; title: string; count: number; activities: Activity[] };
 export type Activity = { slug: string; title: string };
-export type City = { name: string; slug: string };
+export type Category = { slug: string; title: string; count: number; activities: Activity[] };
 
-/** A real offer on the wall: links to its page in the app. */
+/** A real offer: links to its page in the app. */
 export type ProductCard = {
   kind: 'product';
   id: string;
@@ -40,16 +34,27 @@ export type ProductCard = {
   imageUrl: string;
   /** Every photo in the seller's order, at most MAX_CARD_IMAGES (the card cycles through them). */
   images: string[];
-  categorySlug: string | null;
-  categoryTitle: string | null;
-  seller: SellerRef | null;
 };
 
-/** A rental shop, as the product list names it. Linked by slug when it has one, else by id (the app takes both). */
-export type SellerRef = { key: string; name: string; description: string | null };
-
-/** A curated photo tile for an activity: categories' fallback cover and the collections. */
+/** A curated photo for an activity (content.ts): the activity card's cover when there is one. */
 export type ShowcaseCard = { kind: 'showcase'; id: string; title: string; hint: string; imageUrl: string; activity: string };
+
+/** A category inside an activity card: a real offer's photo and the lowest price, both from the API. */
+export type CategoryRow = { slug: string; title: string; count: number; from: number | null; imageUrl: string | null };
+
+/** «Чем займёмся?»: an activity with offers, its cover, and the stocked categories it opens into. */
+export type ActivityCard = {
+  slug: string;
+  title: string;
+  count: number;
+  /** Curated (showcase) when there is one, else a real offer from the activity. */
+  imageUrl: string | null;
+  hint: string | null;
+  categories: CategoryRow[];
+};
+
+/** The whole catalogue by activity: every kind of gear the platform takes, with how many offers each has now (often 0). */
+export type TaxonomyActivity = { slug: string; title: string; count: number; categories: { slug: string; title: string; count: number }[] };
 
 /** A media path from the API (`/api/v1/media/…`) is relative to the API host. */
 export function resolveMediaUrl(url: string | null | undefined, apiBaseUrl: string): string | null {
@@ -61,35 +66,37 @@ export function resolveMediaUrl(url: string | null | undefined, apiBaseUrl: stri
 /** A card shows this many photos at most: more dots stop reading as dots. */
 export const MAX_CARD_IMAGES = 5;
 
-/** Products without a photo are left out: the wall is pictures first. */
+/** Products without a photo are left out: the landing is pictures first. */
 export function toProductCards(products: WireProduct[], apiBaseUrl: string): ProductCard[] {
   return products.flatMap((p) => {
-    const sorted = [...(p.images ?? [])].sort((a, b) => a.sort_order - b.sort_order).map((i) => i.url);
-    const urls = (sorted.length ? sorted : [p.media_preview_url]).map((u) => resolveMediaUrl(u, apiBaseUrl)).filter((u): u is string => !!u);
+    const urls = [...(p.images ?? [])]
+      .sort((a, b) => a.sort_order - b.sort_order)
+      .map((i) => resolveMediaUrl(i.url, apiBaseUrl))
+      .filter((u): u is string => !!u);
     const images = [...new Set(urls)].slice(0, MAX_CARD_IMAGES);
     const imageUrl = images[0];
     if (!imageUrl) return [];
-    const seller = p.seller ? { key: p.seller.slug ?? p.seller.seller_id, name: p.seller.display_name, description: p.seller.description } : null;
-    return [
-      { kind: 'product' as const, id: p.product_id, title: p.title, price: p.price, imageUrl, images, categorySlug: p.category?.slug ?? null, categoryTitle: p.category?.title ?? null, seller },
-    ];
+    return [{ kind: 'product' as const, id: p.product_id, title: p.title, price: p.price, imageUrl, images }];
   });
+}
+
+/** What a sample of offers gives a card: the lowest price among them and the first photo. */
+export type Sample = { from: number | null; imageUrl: string | null };
+
+/** A few offers (a category's cheapest, an activity's newest) → their lowest price and first photo; none → undefined. */
+export function sampleOf(products: WireProduct[] | null | undefined, apiBaseUrl: string): Sample | undefined {
+  if (!products?.length) return undefined;
+  const prices = products.map((p) => p.price).filter((p): p is number => p != null);
+  return { from: prices.length ? Math.min(...prices) : null, imageUrl: toProductCards(products, apiBaseUrl)[0]?.imageUrl ?? null };
 }
 
 export const toCategories = (categories: WireCategory[]): Category[] =>
   categories.map((c) => ({ slug: c.slug, title: c.title, count: c.count, activities: c.activities.map((a) => ({ slug: a.slug, title: a.title })) }));
 
-export const toCities = (cities: WireCity[]): City[] => cities.map((c) => ({ name: c.name, slug: c.slug }));
 
 // ---- arranging ----------------------------------------------------------------------------------------------------
 
-/** The lowest price among a category's offers (the «от X ₽» on its tile), or null when none is priced. */
-export function priceFrom(products: ProductCard[], categorySlug: string): number | null {
-  const prices = products.filter((p) => p.categorySlug === categorySlug && p.price != null).map((p) => p.price!);
-  return prices.length ? Math.min(...prices) : null;
-}
-
-/** Below this a count reads as "almost nothing here": tiles show the price alone. */
+/** Below this a count reads as "almost nothing here": cards show the price alone. */
 export const MIN_SHOWN_COUNT = 3;
 
 export type SeasonKey = 'summer' | 'winter' | 'offseason';
@@ -108,40 +115,72 @@ const SEASON_ACTIVITIES: Record<Exclude<SeasonKey, 'offseason'>, string[]> = {
   winter: ['winter_sports'],
 };
 
-/** Offers in season first (by their category's activities), the rest after, each group in its own order. */
-export function inSeasonFirst(products: ProductCard[], categories: Category[], season: SeasonKey): ProductCard[] {
-  if (season === 'offseason') return products;
-  const wanted = SEASON_ACTIVITIES[season];
-  const inSeason = new Set(categories.filter((c) => c.activities.some((a) => wanted.includes(a.slug))).map((c) => c.slug));
-  const score = (p: ProductCard) => (p.categorySlug && inSeason.has(p.categorySlug) ? 0 : 1);
-  return [...products].sort((a, b) => score(a) - score(b));
-}
-
-/** Distinct rental shops with how many of the listed offers each has, most offers first. */
-export function sellersOf(products: ProductCard[]): (SellerRef & { offers: number; imageUrl: string })[] {
-  const byKey = new Map<string, SellerRef & { offers: number; imageUrl: string }>();
-  for (const p of products) {
-    if (!p.seller) continue;
-    const known = byKey.get(p.seller.key);
-    if (known) known.offers += 1;
-    else byKey.set(p.seller.key, { ...p.seller, offers: 1, imageUrl: p.imageUrl });
-  }
-  return [...byKey.values()].sort((a, b) => b.offers - a.offers);
-}
-
 /** Categories with offers right now: an empty one would open an empty catalogue. */
 export const liveCategories = (categories: Category[]): Category[] => categories.filter((c) => c.count > 0);
 
-/** Curated tiles whose activity really has offers now (never a collection that opens an empty catalogue). */
-export function liveCollections(showcase: ShowcaseCard[], categories: Category[]): ShowcaseCard[] {
-  const live = new Set(categories.filter((c) => c.count > 0).flatMap((c) => c.activities.map((a) => a.slug)));
-  return showcase.filter((s) => live.has(s.activity));
+/**
+ * «Чем займёмся?»: every activity with offers, in season first, then by how much it has. Each lists its stocked
+ * categories (a category can sit under several), with a real offer's photo and the cheapest price from `byCategory`.
+ * The cover is the curated photo for the activity, else a real offer's (`byActivity`). Nothing is invented: an activity
+ * or category without offers isn't shown.
+ */
+export function activityCards(
+  activities: (Activity & { count: number })[],
+  categories: Category[],
+  samples: { byActivity: Record<string, Sample | undefined>; byCategory: Record<string, Sample | undefined> },
+  showcase: ShowcaseCard[],
+  season: SeasonKey,
+): ActivityCard[] {
+  const inSeason = season === 'offseason' ? [] : SEASON_ACTIVITIES[season];
+  const rows = (activity: string): CategoryRow[] =>
+    liveCategories(categories)
+      .filter((c) => c.activities.some((a) => a.slug === activity))
+      .map((c) => {
+        const sample = samples.byCategory[c.slug];
+        return { slug: c.slug, title: c.title, count: c.count, from: sample?.from ?? null, imageUrl: sample?.imageUrl ?? null };
+      });
+  return activities
+    .filter((a) => a.count > 0)
+    .map((a) => {
+      const curated = showcase.find((s) => s.activity === a.slug);
+      return {
+        slug: a.slug,
+        title: a.title,
+        count: a.count,
+        imageUrl: curated?.imageUrl ?? samples.byActivity[a.slug]?.imageUrl ?? null,
+        hint: curated?.hint ?? null,
+        categories: rows(a.slug),
+      };
+    })
+    .sort((x, y) => Number(inSeason.includes(y.slug)) - Number(inSeason.includes(x.slug)) || y.count - x.count);
 }
 
-/** Distinct activities across categories, in catalogue order. */
-export function activitiesOf(categories: Category[]): Activity[] {
-  const seen = new Map<string, Activity>();
-  for (const c of categories) for (const a of c.activities) if (!seen.has(a.slug)) seen.set(a.slug, a);
+/**
+ * Every activity the platform covers with the kinds of gear under it (the tree's leaves: groups are only headings),
+ * each with its live count (0 when nobody rents it yet). Activities with offers first, by count; then by how much they
+ * cover. This is what exists, not what is stocked: the UI must tell the two apart.
+ */
+export function taxonomyOf(tree: WireTreeCategory[], live: Category[]): TaxonomyActivity[] {
+  const parents = new Set(tree.map((c) => c.parent_id).filter(Boolean));
+  const counts = new Map(live.map((c) => [c.slug, c.count]));
+  const byActivity = new Map<string, TaxonomyActivity>();
+  for (const c of tree) {
+    if (parents.has(c.category_id)) continue;
+    const count = counts.get(c.slug) ?? 0;
+    for (const a of c.activities) {
+      const entry = byActivity.get(a.slug) ?? { slug: a.slug, title: a.title, count: 0, categories: [] };
+      entry.categories.push({ slug: c.slug, title: c.name, count });
+      entry.count += count;
+      byActivity.set(a.slug, entry);
+    }
+  }
+  return [...byActivity.values()].sort((x, y) => y.count - x.count || y.categories.length - x.categories.length);
+}
+
+/** Every kind of gear once (a category can sit under several activities), with the activity it is listed under first. */
+export function gearOf(taxonomy: TaxonomyActivity[]): { slug: string; title: string; count: number; activity: string }[] {
+  const seen = new Map<string, { slug: string; title: string; count: number; activity: string }>();
+  for (const a of taxonomy) for (const c of a.categories) if (!seen.has(c.slug)) seen.set(c.slug, { ...c, activity: a.slug });
   return [...seen.values()];
 }
 

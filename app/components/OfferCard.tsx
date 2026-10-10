@@ -4,8 +4,8 @@ import { formatMoney, type ProductCard } from '~/lib/catalog';
 import { cn } from '~/lib/utils';
 
 /**
- * A real offer, as in the app's catalogue: 4:3 photo (cycling through the offer's photos when it has several), category
- * eyebrow, two-line title, «от X ₽». No rating until reviews exist (a «Новинка» badge instead of an empty star). Opens
+ * A real offer, as in the app's catalogue: 4:3 photo (cycling through the offer's photos when it has several), two-line
+ * title, «от X ₽». No rating until reviews exist (a «Новинка» badge instead of an empty star). Opens
  * the offer in the app.
  */
 export function OfferCard({ offer, eager = false, delay = 0, className }: { offer: ProductCard; eager?: boolean; delay?: number; className?: string }) {
@@ -16,8 +16,7 @@ export function OfferCard({ offer, eager = false, delay = 0, className }: { offe
         <span className="absolute top-3 left-3 rounded-full bg-white/95 px-2.5 py-1 text-xs font-semibold shadow-sm">Новинка</span>
       </span>
       <span className="mt-3 block">
-        {offer.categoryTitle ? <span className="block text-xs font-semibold tracking-wide text-muted-foreground uppercase">{offer.categoryTitle}</span> : null}
-        <span className="mt-0.5 line-clamp-2 font-semibold leading-snug">{offer.title}</span>
+        <span className="line-clamp-2 font-semibold leading-snug">{offer.title}</span>
         {offer.price != null ? (
           <span className="mt-1.5 block text-[15px]">
             от <span className="font-bold">{formatMoney(offer.price)}</span>

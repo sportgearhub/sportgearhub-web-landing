@@ -1,33 +1,50 @@
 import { Check } from 'lucide-react';
-import { CategoryGrid } from '~/components/CategoryGrid';
-import { Collections } from '~/components/Collections';
+import { ActivityCards } from '~/components/ActivityCards';
+import { CatalogMarquee } from '~/components/CatalogMarquee';
 import { Faq } from '~/components/Faq';
 import { Guarantees } from '~/components/Guarantees';
+import { HeroOffers } from '~/components/HeroOffers';
 import { HowItWorks } from '~/components/HowItWorks';
 import { OfferRow } from '~/components/OfferCard';
-import { Partners } from '~/components/Partners';
-import { PopularLinks } from '~/components/PopularLinks';
 import { SearchForm } from '~/components/SearchForm';
 import { SellerBand } from '~/components/SellerBand';
 import { Section } from '~/components/Section';
 import { publicApi } from '~/lib/api.server';
-import { activitiesOf, formatMoney, inSeasonFirst, liveCategories, liveCollections, seasonOf, sellersOf, toCategories, toProductCards } from '~/lib/catalog';
+import { activityCards, gearOf, liveCategories, plural, sampleOf, seasonOf, taxonomyOf, toCategories, toProductCards, type ActivityCard } from '~/lib/catalog';
 import { appLink, config } from '~/lib/config';
-import { FAQ, HERO, SHOWCASE } from '~/lib/content';
+import { CATALOG_PITCH, FAQ, HERO, SHOWCASE } from '~/lib/content';
 import { seo } from '~/lib/seo';
 import type { Route } from './+types/home';
 
-/** Runs at build time (pre-rendering): the page ships with the catalogue as it was then. CI rebuilds it on a schedule. */
+/**
+ * Runs at build time (pre-rendering): the page ships with the catalogue as it was then; CI rebuilds it on a schedule.
+ * `products/options` gives the activities and categories with counts; then, for every activity with offers, its newest
+ * offer (a cover when there's no curated photo) and for every stocked category its cheapest few (the «от» price and a
+ * photo). `catalog/categories` adds the whole tree, empty kinds included, for «Весь каталог». A handful of requests per build, all public. If the API is down the page still builds: the activity cards
+ * fall back to the curated photos alone.
+ */
 export async function loader() {
-  const [categories, products] = await Promise.all([publicApi.categories(), publicApi.products()]);
+  const [options, products, tree] = await Promise.all([publicApi.options(), publicApi.products({ pageSize: 12 }), publicApi.tree()]);
+  const season = seasonOf(new Date());
+  const categories = liveCategories(toCategories(options?.categories ?? []));
+  const activities = (options?.activities ?? []).filter((a) => a.count > 0);
+
+  const sample = async (key: string, query: Parameters<typeof publicApi.products>[0]) => [key, sampleOf(await publicApi.products(query), config.apiBaseUrl)] as const;
+  const [byActivity, byCategory] = await Promise.all([
+    Promise.all(activities.map((a) => sample(a.slug, { pageSize: 1, activity: a.slug }))).then(Object.fromEntries),
+    Promise.all(categories.map((c) => sample(c.slug, { pageSize: 4, sort: 'price_asc', category: c.slug }))).then(Object.fromEntries),
+  ]);
+
+  const cards: ActivityCard[] = options
+    ? activityCards(activities, categories, { byActivity, byCategory }, SHOWCASE, season)
+    : SHOWCASE.map((s) => ({ slug: s.activity, title: s.title, count: 0, imageUrl: s.imageUrl, hint: s.hint, categories: [] }));
+
   return {
-    categories: liveCategories(toCategories(categories ?? [])),
-    products: toProductCards(products ?? [], config.apiBaseUrl),
-    season: seasonOf(new Date()),
+    activities: cards,
+    offers: toProductCards(products ?? [], config.apiBaseUrl),
+    taxonomy: taxonomyOf(tree ?? [], categories),
   };
 }
-
-const OFFERS_TITLE = { summer: 'Летний сезон', winter: 'Зимний сезон', offseason: 'Сейчас в прокате' } as const;
 
 export const meta: Route.MetaFunction = () => [
   ...seo({ description: HERO.subtitle, path: '/' }),
@@ -53,11 +70,8 @@ export const meta: Route.MetaFunction = () => [
 ];
 
 export default function Home({ loaderData }: Route.ComponentProps) {
-  const { categories, products, season } = loaderData;
-  const offers = inSeasonFirst(products, categories, season).slice(0, 8);
-  const collections = liveCollections(SHOWCASE, categories);
-  const sellers = sellersOf(products);
-  const featured = offers[0];
+  const { activities, offers, taxonomy } = loaderData;
+  const gear = gearOf(taxonomy);
 
   return (
     <>
@@ -79,56 +93,35 @@ export default function Home({ loaderData }: Route.ComponentProps) {
           </ul>
         </div>
 
-        <div className="relative hidden lg:block">
-          <img
-            src={featured?.imageUrl ?? HERO.image}
-            alt=""
-            fetchPriority="high"
-            decoding="async"
-            className="aspect-[4/3.6] w-full rounded-3xl object-cover"
-          />
-          {featured ? (
-            <a
-              href={appLink(`/offers/${featured.id}`)}
-              className="absolute -bottom-6 -left-8 flex max-w-80 items-center gap-3 rounded-2xl bg-card p-3 pr-5 shadow-float outline-none hover:ring-2 hover:ring-primary/30 focus-visible:ring-[3px] focus-visible:ring-ring/40"
-            >
-              <img src={featured.imageUrl} alt="" className="size-14 shrink-0 rounded-xl object-cover" />
-              <span className="min-w-0">
-                <span className="line-clamp-1 text-sm font-semibold">{featured.title}</span>
-                {featured.price != null ? (
-                  <span className="text-sm text-muted-foreground">
-                    от <span className="font-bold text-foreground">{formatMoney(featured.price)}</span>
-                  </span>
-                ) : null}
-                <span className="mt-0.5 flex items-center gap-1 text-xs font-semibold text-success">
-                  <span className="size-1.5 rounded-full bg-success" aria-hidden />
-                  Можно забронировать онлайн
-                </span>
-              </span>
-            </a>
-          ) : null}
-        </div>
+        {/* Desktop: real offers taking turns, each with its card. */}
+        <HeroOffers offers={offers.slice(0, 5)} fallbackImage={HERO.image} />
       </section>
 
-      <Section title="Что взять в прокат" more={{ href: appLink('/'), label: 'Весь каталог' }} className="lg:pt-16">
-        <CategoryGrid categories={categories} products={products} />
-      </Section>
+      {gear.length ? (
+        <Section
+          title={CATALOG_PITCH.title}
+          intro={`${CATALOG_PITCH.text} ${gear.length} ${plural(gear.length, ['вид', 'вида', 'видов'])} снаряжения в ${taxonomy.length} ${plural(taxonomy.length, ['занятии', 'занятиях', 'занятиях'])}.`}
+          className="lg:pt-16"
+        >
+          <CatalogMarquee gear={gear} activities={taxonomy} lines={4} />
+        </Section>
+      ) : null}
+
+      {activities.length ? (
+        <Section
+          id="activities"
+          title="Чем займёмся?"
+          intro="Занятия, для которых есть снаряжение в прокате, и что для них взять."
+          more={{ href: appLink('/'), label: 'Весь каталог' }}
+          className="pt-0 sm:pt-0 lg:pt-0"
+        >
+          <ActivityCards items={activities} />
+        </Section>
+      ) : null}
 
       {offers.length ? (
-        <Section title={OFFERS_TITLE[season]} intro="Свежие предложения прокатов — бронируйте онлайн." more={{ href: appLink('/'), label: 'Все предложения' }} className="pt-0 sm:pt-0 lg:pt-0">
-          <OfferRow offers={offers} />
-        </Section>
-      ) : null}
-
-      {collections.length ? (
-        <Section title="Идеи на выходные" intro="Подборки по занятиям — от реки до горнолыжного склона." className="pt-0 sm:pt-0 lg:pt-0">
-          <Collections items={collections} />
-        </Section>
-      ) : null}
-
-      {sellers.length ? (
-        <Section title="Прокаты-партнёры" intro="Местные прокаты, которые работают через Sportgearhub." className="pt-0 sm:pt-0 lg:pt-0">
-          <Partners sellers={sellers} />
+        <Section title="Сейчас в прокате" intro="Свежие предложения прокатов — бронируйте онлайн." more={{ href: appLink('/'), label: 'Все предложения' }} className="pt-0 sm:pt-0 lg:pt-0">
+          <OfferRow offers={offers.slice(0, 8)} />
         </Section>
       ) : null}
 
@@ -139,7 +132,6 @@ export default function Home({ loaderData }: Route.ComponentProps) {
       <Guarantees />
       <Faq />
       <SellerBand />
-      <PopularLinks categories={categories} activities={activitiesOf(categories)} />
     </>
   );
 }

@@ -97,10 +97,11 @@
 
 /*
  * Swipeable row that bleeds to the screen edge on phones. Browsers drop a scroller's end padding, so a 1px spacer after
- * the last item keeps a gutter (the row's gap) on the right once scrolled to the end.
+ * the last item keeps a gutter (the row's gap) on the right once scrolled to the end. From `sm:` rows are grids, so
+ * they stop scrolling (and clipping what sticks out of a card: rings, lifts).
  */
 @utility snap-row {
-  @apply -mx-4 flex snap-x snap-mandatory scroll-px-4 gap-3 overflow-x-auto px-4 scrollbar-hide sm:mx-0 sm:scroll-px-0 sm:px-0;
+  @apply -mx-4 flex snap-x snap-mandatory scroll-px-4 gap-3 overflow-x-auto px-4 scrollbar-hide sm:mx-0 sm:scroll-px-0 sm:overflow-visible sm:px-0;
   &::after {
     content: "";
     flex: 0 0 1px;
@@ -130,5 +131,67 @@
       animation-timeline: scroll(root);
       animation-range: 0 480px;
     }
+  }
+}
+
+/*
+ * A row that drifts sideways forever: the track holds its items twice, so moving it by half loops seamlessly. Hover or
+ * keyboard focus inside holds it still; with reduced motion it doesn't move and scrolls by hand instead.
+ */
+@keyframes marquee {
+  to {
+    translate: -50% 0;
+  }
+}
+@utility marquee {
+  animation: marquee var(--marquee-duration, 90s) linear infinite;
+  &:hover,
+  &:focus-within {
+    animation-play-state: paused;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    animation: none;
+  }
+}
+
+/* A photo slowly leaning in while it is shown (the hero's offers). */
+@keyframes ken-burns {
+  from {
+    scale: 1;
+  }
+  to {
+    scale: 1.07;
+  }
+}
+@keyframes rise-in {
+  from {
+    opacity: 0;
+    translate: 0 0.5rem;
+  }
+}
+
+/* Icon bubbles bobbing gently (the seller band); each sets its own delay. Still with reduced motion. */
+@keyframes float {
+  50% {
+    translate: 0 -0.5rem;
+  }
+}
+@utility float {
+  animation: float 6s ease-in-out infinite;
+  @media (prefers-reduced-motion: reduce) {
+    animation: none;
+  }
+}
+
+/* The seller band's contour lines sliding sideways, one tile (720px) per loop. Still with reduced motion. */
+@keyframes band-drift {
+  to {
+    background-position-x: 720px;
+  }
+}
+@utility band-drift {
+  animation: band-drift 60s linear infinite;
+  @media (prefers-reduced-motion: reduce) {
+    animation: none;
   }
 }

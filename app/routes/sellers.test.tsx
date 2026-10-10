@@ -6,10 +6,22 @@ import Sellers from './sellers';
 
 type SellersProps = Parameters<typeof Sellers>[0];
 
-const shop = (key: string) => ({ key, name: `Прокат ${key}`, description: null, offers: 2, imageUrl: 'https://img.example/p.jpg' });
-
-function renderSellers(sellers = [shop('a')]) {
-  const loaderData = { cities: [{ name: 'Уфа', slug: 'ufa' }], sellers };
+function renderSellers() {
+  const loaderData = {
+    sellers: 2,
+    taxonomy: [
+      {
+        slug: 'winter_sports',
+        title: 'Зимний спорт',
+        count: 4,
+        categories: [
+          { slug: 'skis', title: 'Лыжи', count: 4 },
+          { slug: 'snowboard', title: 'Сноуборд', count: 0 },
+        ],
+      },
+      { slug: 'fishing', title: 'Рыбалка', count: 0, categories: [{ slug: 'fishing_rod', title: 'Удочка', count: 0 }] },
+    ],
+  };
   render(
     <MemoryRouter>
       <Sellers {...({ loaderData } as unknown as SellersProps)} />
@@ -31,14 +43,15 @@ describe('Sellers', () => {
     expect(within(how).getAllByRole('heading', { level: 3 }).map((h) => h.textContent)).toEqual(SELLERS.journey.map((s) => s.title));
   });
 
-  it('hides the shops while there are fewer than three', () => {
+  it('pitches what can be rented out: real figures as opportunity, and per activity what works and what is free', () => {
     renderSellers();
-    expect(screen.queryByRole('region', { name: 'Уже на Sportgearhub' })).toBeNull();
-  });
-
-  it('lists real shops once there are enough', () => {
-    renderSellers([shop('a'), shop('b'), shop('c')]);
-    expect(within(screen.getByRole('region', { name: 'Уже на Sportgearhub' })).getAllByRole('link')).toHaveLength(3);
+    const section = screen.getByRole('region', { name: 'Что можно сдавать' });
+    expect(section).toHaveTextContent('2направления проката');
+    expect(section).toHaveTextContent('3вида снаряжения можно сдавать');
+    expect(section).toHaveTextContent('2проката уже подключились');
+    expect(section).toHaveTextContent('2свободные категории — займите первыми');
+    expect(within(section).getAllByRole('group')).toHaveLength(2);
+    expect(within(section).getByText(/Рыбалка/).closest('summary')).toHaveTextContent('1 вид · все свободны');
   });
 
   it('answers seller questions without JS', () => {
