@@ -12,7 +12,7 @@ import { Section } from '~/components/Section';
 import { publicApi } from '~/lib/api.server';
 import { activityCards, gearOf, liveCategories, plural, sampleOf, seasonOf, taxonomyOf, toCategories, toProductCards, type ActivityCard } from '~/lib/catalog';
 import { appLink, config } from '~/lib/config';
-import { CATALOG_PITCH, FAQ, HERO, SHOWCASE } from '~/lib/content';
+import { CATALOG_PITCH, FAQ, HERO, SHOWCASE, SOCIALS } from '~/lib/content';
 import { seo } from '~/lib/seo';
 import type { Route } from './+types/home';
 
@@ -44,12 +44,19 @@ export async function loader() {
 }
 
 export const meta: Route.MetaFunction = () => [
-  ...seo({ description: HERO.subtitle, path: '/' }),
+  ...seo({ title: 'Прокат спортивного снаряжения: лыжи, велосипеды, SUP', description: HERO.subtitle, path: '/' }),
   {
     'script:ld+json': {
       '@context': 'https://schema.org',
       '@graph': [
-        { '@type': 'Organization', name: 'Sportgearhub', url: `${config.siteUrl}/`, logo: `${config.siteUrl}/icon-512.png` },
+        {
+          '@type': 'Organization',
+          name: 'Sportgearhub',
+          url: `${config.siteUrl}/`,
+          logo: `${config.siteUrl}/icon-512.png`,
+          // The accounts that are open (VK and Instagram aren't yet).
+          sameAs: SOCIALS.flatMap((s) => (s.href && s.id !== 'telegram-chat' ? [s.href] : [])),
+        },
         {
           '@type': 'WebSite',
           name: 'Sportgearhub',

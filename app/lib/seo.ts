@@ -13,12 +13,13 @@ const OG_ALT: Record<OgImage, string> = {
 };
 
 /**
- * Title, description, canonical URL, Open Graph and Twitter tags for one page. The preview image is absolute (bots
- * don't resolve relative ones reliably) and declares its size, type and alt, so messengers render it without fetching
- * first and describe it to screen readers.
+ * Title, description, canonical URL, Open Graph and Twitter tags for one page. `title` is the search phrase, first; the
+ * page title adds «| Sportgearhub» after it, the Open Graph title doesn't (og:site_name carries the brand). Keep it to
+ * ~55 characters (results cut at ~60–65) and the description to ~155. The preview image is absolute (bots don't resolve
+ * relative ones reliably) and declares its size, type and alt.
  */
-export function seo({ title, description, path, image = 'home' }: { title?: string; description: string; path: string; image?: OgImage }): MetaDescriptor[] {
-  const fullTitle = title ? `${title} — ${SITE_NAME}` : `${SITE_NAME} — аренда спортивного снаряжения рядом`;
+export function seo({ title, description, path, image = 'home' }: { title: string; description: string; path: string; image?: OgImage }): MetaDescriptor[] {
+  const fullTitle = `${title} | ${SITE_NAME}`;
   const url = `${config.siteUrl}${path === '/' ? '/' : path}`;
   const imageUrl = `${config.siteUrl}/og/${image}.png`;
   return [
@@ -28,7 +29,7 @@ export function seo({ title, description, path, image = 'home' }: { title?: stri
     { property: 'og:type', content: 'website' },
     { property: 'og:site_name', content: SITE_NAME },
     { property: 'og:locale', content: 'ru_RU' },
-    { property: 'og:title', content: fullTitle },
+    { property: 'og:title', content: title },
     { property: 'og:description', content: description },
     { property: 'og:url', content: url },
     { property: 'og:image', content: imageUrl },
@@ -37,7 +38,7 @@ export function seo({ title, description, path, image = 'home' }: { title?: stri
     { property: 'og:image:height', content: '630' },
     { property: 'og:image:alt', content: OG_ALT[image] },
     { name: 'twitter:card', content: 'summary_large_image' },
-    { name: 'twitter:title', content: fullTitle },
+    { name: 'twitter:title', content: title },
     { name: 'twitter:description', content: description },
     { name: 'twitter:image', content: imageUrl },
     { name: 'twitter:image:alt', content: OG_ALT[image] },

@@ -33,7 +33,12 @@ const HERO_BACKGROUND = [
 /** Without the catalogue (API down at build), a few activities anyway. */
 const FALLBACK_ICONS = [Bike, Snowflake, Tent, Waves, Mountain];
 
-export const meta: Route.MetaFunction = () => seo({ title: 'О сервисе', description: ABOUT.text, path: '/about', image: 'about' });
+export const meta: Route.MetaFunction = () => seo({
+    title: 'О сервисе: прокат снаряжения в одном месте',
+    description: 'Sportgearhub собирает предложения локальных прокатов: честные цены и условия, онлайн-оплата, защита обеих сторон сделки.',
+    path: '/about',
+    image: 'about',
+  });
 
 /**
  * «О сервисе»: what Sportgearhub is, then how wide it goes — every activity it covers (tiles), why rent at all, and

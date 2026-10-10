@@ -5,7 +5,7 @@ import { seo } from '~/lib/seo';
 import type { Route } from './+types/documents';
 
 export const meta: Route.MetaFunction = () =>
-  seo({ title: 'Документы', description: 'Условия сервиса, политика конфиденциальности, оферта и реквизиты Sportgearhub.', path: '/documents' });
+  seo({ title: 'Документы и реквизиты', description: 'Условия сервиса, политика конфиденциальности, оферта и реквизиты Sportgearhub.', path: '/documents' });
 
 export default function Documents() {
   return (

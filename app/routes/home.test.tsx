@@ -71,12 +71,12 @@ describe('Home', () => {
     expect(link.querySelectorAll('img')).toHaveLength(3); // both photos, plus the first again for the endless loop
   });
 
-  it('shows each activity with offers, opening the app on it, and its categories with real prices', () => {
+  it('shows each activity with offers, opening its page, and its categories with real prices', () => {
     renderHome();
     const section = screen.getByRole('region', { name: 'Чем займёмся?' });
-    expect(within(section).getByRole('link', { name: /Зимний спорт/ })).toHaveAttribute('href', 'https://app.sportgearhub.ru/?activity=winter_sports');
+    expect(within(section).getByRole('link', { name: /Зимний спорт/ })).toHaveAttribute('href', '/activities/winter-sports');
     const skis = within(section).getByRole('link', { name: /Лыжи/ });
-    expect(skis).toHaveAttribute('href', 'https://app.sportgearhub.ru/?category=skis&activity=winter_sports');
+    expect(skis).toHaveAttribute('href', '/rent/skis');
     expect(skis).toHaveTextContent('от 900');
     expect(skis).toHaveTextContent('4 предложения');
   });
@@ -96,7 +96,7 @@ describe('Home', () => {
     expect(all).toHaveTextContent('3 вида снаряжения в 2 занятиях');
     // Each row is there twice (the loop); only the first copy is reachable.
     expect(within(all).getAllByRole('link', { name: /Лыжи/ })).toHaveLength(1);
-    expect(within(all).getByRole('link', { name: /Лыжи/ })).toHaveAttribute('href', 'https://app.sportgearhub.ru/?category=skis');
+    expect(within(all).getByRole('link', { name: /Лыжи/ })).toHaveAttribute('href', '/rent/skis');
     expect(within(all).queryByRole('link', { name: /Сноуборд|Удочка/ })).toBeNull();
     expect(within(all).getAllByText('Удочка').length).toBeGreaterThan(0);
   });

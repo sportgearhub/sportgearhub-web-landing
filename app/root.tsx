@@ -1,9 +1,16 @@
-import { isRouteErrorResponse, Links, Meta, Outlet, Scripts, ScrollRestoration } from 'react-router';
+import { isRouteErrorResponse, Links, Meta, Outlet, Scripts, ScrollRestoration, useRouteLoaderData } from 'react-router';
 import type { Route } from './+types/root';
 import { SiteFooter } from './components/SiteFooter';
 import { SiteHeader } from './components/SiteHeader';
 import { NotFound } from './components/NotFound';
+import { publicApi } from './lib/api.server';
+import { navCatalog } from './lib/catalog';
 import './app.css';
+
+/** Build time: what has offers now, for the header's «Прокат» menu and the footer (the same on every page). */
+export async function loader() {
+  return { nav: navCatalog(await publicApi.options()) };
+}
 
 export const links: Route.LinksFunction = () => [
   // The icon set (from assets/logo-rounded-square): ICO for old browsers and anything asking /favicon.ico (sizes keeps
@@ -48,13 +55,14 @@ export default function App() {
 }
 
 function Page({ children }: { children: React.ReactNode }) {
+  const nav = useRouteLoaderData<typeof loader>('root')?.nav;
   return (
     <div className="flex min-h-dvh flex-col">
-      <SiteHeader />
+      <SiteHeader nav={nav} />
       <main id="main" className="flex-1">
         {children}
       </main>
-      <SiteFooter />
+      <SiteFooter nav={nav} />
     </div>
   );
 }

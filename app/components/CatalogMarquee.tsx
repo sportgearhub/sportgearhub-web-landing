@@ -1,19 +1,19 @@
 import { createElement } from 'react';
 import { activityIcon, activityTone } from '~/lib/activity-icons';
-import type { gearOf, TaxonomyActivity } from '~/lib/catalog';
-import { appLink } from '~/lib/config';
+import { activityPath, rentPath, type gearOf, type TaxonomyActivity } from '~/lib/catalog';
+import { Link } from 'react-router';
 import { cn } from '~/lib/utils';
 
 type Gear = ReturnType<typeof gearOf>[number];
-/** A chip: a kind of gear or an activity, with the activity icon it wears and the catalogue filter it opens. */
+/** A chip: a kind of gear or an activity, with the activity icon it wears and what it opens (its page on this site). */
 type Item = { key: string; title: string; count: number; activity: string; filter: { category: string } | { activity: string } };
 
 /**
  * «Весь каталог»: the platform's whole catalogue as `lines` rows of chips drifting slowly, each the other way (the
  * `marquee` utility: hover or focus holds a row, reduced motion turns it into a row scrolled by hand). With
  * `activities`, the first row is the activities and the rest the kinds of gear. What can be booked now wears its
- * activity's colour, with a green dot and its count, and opens the app's catalogue on it; the rest is shown quietly, with no link, since it
- * would open an empty page. The second copy of a row only closes the loop: hidden from assistive tech and the tab order.
+ * activity's colour, with a green dot and its count, and opens its page (/rent/…, /activities/…); the rest is shown
+ * quietly, with no link, since it would be an empty page. The second copy of a row only closes the loop: hidden from assistive tech and the tab order.
  */
 export function CatalogMarquee({ gear, activities, lines = 2 }: { gear: Gear[]; activities?: TaxonomyActivity[]; lines?: number }) {
   const gearItems: Item[] = gear.map((g) => ({ key: g.slug, title: g.title, count: g.count, activity: g.activity, filter: { category: g.slug } }));
@@ -63,12 +63,12 @@ function Chip({ item: g, copy }: { item: Item; copy: boolean }) {
   return (
     <li aria-hidden={copy || undefined} inert={copy || undefined}>
       {live ? (
-        <a
-          href={appLink('/', g.filter)}
+        <Link
+          to={'category' in g.filter ? rentPath(g.filter.category) : activityPath(g.filter.activity)}
           className={cn(chip, tone.icon, 'transition-colors outline-none hover:bg-card focus-visible:ring-[3px] focus-visible:ring-ring/40')}
         >
           {body}
-        </a>
+        </Link>
       ) : (
         <span className={cn(chip, 'text-muted-foreground')}>{body}</span>
       )}

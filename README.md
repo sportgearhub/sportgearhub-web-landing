@@ -44,7 +44,7 @@ every push to `production`. Run the workflow by hand to publish new offers soone
 ```
 app/
   root.tsx              document, header/footer, 404 boundary
-  routes.ts             /, /about, /sellers, /documents, /404, /sitemap.xml
+  routes.ts             /, /about, /sellers, /documents, /rent/:category, /activities/:activity, /404, /sitemap.xml
   routes/               one module per page (loader + meta + component)
   components/           header, footer, search, offer cards, categories, collections, how-it-works, FAQ…
   lib/

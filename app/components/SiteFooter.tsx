@@ -1,7 +1,9 @@
 import { Mail, Phone } from 'lucide-react';
 import { Link } from 'react-router';
 import { appLink, config } from '~/lib/config';
+import { activityPath, rentPath, type NavCatalog } from '~/lib/catalog';
 import { CONTACTS, LEGAL_DOCUMENTS } from '~/lib/content';
+import { rentHeading } from '~/lib/wording';
 import { AppDownload } from './AppDownload';
 import { LegalDetails } from './LegalDetails';
 import { SocialLinks } from './SocialLinks';
@@ -9,11 +11,14 @@ import { Wordmark } from './Wordmark';
 
 const linkClass = 'text-muted-foreground transition-colors hover:text-foreground';
 
-/** Site footer: the brand with the apps, short link columns and contacts (two-up on phones), then the legal details. */
-export function SiteFooter() {
+/**
+ * Site footer: the brand with the apps, short link columns — the catalogue pages with offers (`nav`, from the root
+ * loader), sellers, documents — and contacts (two-up on phones), then the legal details.
+ */
+export function SiteFooter({ nav }: { nav?: NavCatalog }) {
   return (
     <footer className="border-t bg-muted/50">
-      <div className="container-page grid grid-cols-2 gap-x-6 gap-y-8 py-10 sm:grid-cols-[1fr_auto_auto] sm:gap-12 lg:grid-cols-[1fr_auto_auto_auto_auto] lg:gap-16">
+      <div className="container-page grid grid-cols-2 gap-x-6 gap-y-8 py-10 sm:grid-cols-[1fr_auto_auto] sm:gap-12 lg:grid-cols-[1fr_auto_auto_auto_auto_auto] lg:gap-16">
         <div className="col-span-2 space-y-3 sm:col-span-1">
           <Wordmark size="sm" />
           <p className="max-w-xs text-sm text-muted-foreground">Прокат спортивного снаряжения от проверенных локальных партнёров.</p>
@@ -31,6 +36,20 @@ export function SiteFooter() {
             Войти
           </a>
         </FooterColumn>
+        {nav && (nav.activities.length || nav.categories.length) ? (
+          <FooterColumn title="Прокат">
+            {nav.categories.map((c) => (
+              <Link key={c.slug} className={linkClass} to={rentPath(c.slug)}>
+                {rentHeading(c.slug, c.title)}
+              </Link>
+            ))}
+            {nav.activities.map((a) => (
+              <Link key={a.slug} className={linkClass} to={activityPath(a.slug)}>
+                {a.title}
+              </Link>
+            ))}
+          </FooterColumn>
+        ) : null}
         <FooterColumn title="Продавцам">
           <Link className={linkClass} to="/sellers">
             Как подключиться

@@ -8,7 +8,18 @@ import type { WireOptions, WireProduct, WireTreeCategory } from './catalog';
 const LOCALE = 'ru-RU';
 const TIMEOUT_MS = 15_000;
 
-async function get<T>(path: string, query: Record<string, string | number> = {}): Promise<T | null> {
+/** One build pre-renders every page, and each (with the root's header and footer) asks for the same lists: read each
+ * once per build. Not in dev, where every request should see the live API. */
+const cache = new Map<string, Promise<unknown>>();
+
+function get<T>(path: string, query: Record<string, string | number> = {}): Promise<T | null> {
+  if (import.meta.env.DEV) return fetchJson<T>(path, query);
+  const key = `${path}?${new URLSearchParams(Object.entries(query).map(([k, v]) => [k, String(v)]))}`;
+  if (!cache.has(key)) cache.set(key, fetchJson<T>(path, query));
+  return cache.get(key) as Promise<T | null>;
+}
+
+async function fetchJson<T>(path: string, query: Record<string, string | number> = {}): Promise<T | null> {
   const url = new URL(path, `${config.apiBaseUrl}/`);
   for (const [k, v] of Object.entries(query)) url.searchParams.set(k, String(v));
   try {

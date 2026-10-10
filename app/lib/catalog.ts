@@ -93,6 +93,28 @@ export const toCategories = (categories: WireCategory[]): Category[] =>
   categories.map((c) => ({ slug: c.slug, title: c.title, count: c.count, activities: c.activities.map((a) => ({ slug: a.slug, title: a.title })) }));
 
 
+// ---- addresses ----------------------------------------------------------------------------------------------------
+
+/** The API's slugs (`sup_board`) as URL slugs (`sup-board`): English, lowercase, hyphens. And back. */
+export const toUrlSlug = (apiSlug: string) => apiSlug.replace(/_/g, '-');
+export const toApiSlug = (urlSlug: string) => urlSlug.replace(/-/g, '_');
+
+/** A category's page (`/rent/skis`) and an activity's (`/activities/winter-sports`). */
+export const rentPath = (category: string) => `/rent/${toUrlSlug(category)}`;
+export const activityPath = (activity: string) => `/activities/${toUrlSlug(activity)}`;
+
+/** The header's «Прокат» menu and the footer's column: what has offers now, each with its activity for the icon. */
+export type NavCatalog = { activities: Activity[]; categories: (Activity & { activity: string })[] };
+
+export function navCatalog(options: WireOptions | null | undefined): NavCatalog {
+  return {
+    activities: (options?.activities ?? []).filter((a) => a.count > 0).map((a) => ({ slug: a.slug, title: a.title })),
+    categories: (options?.categories ?? [])
+      .filter((c) => c.count > 0)
+      .map((c) => ({ slug: c.slug, title: c.title, activity: c.activities[0]?.slug ?? c.slug })),
+  };
+}
+
 // ---- arranging ----------------------------------------------------------------------------------------------------
 
 /** Below this a count reads as "almost nothing here": cards show the price alone. */

@@ -1,8 +1,11 @@
-import { useRef } from 'react';
+import { createElement, Fragment, useRef } from 'react';
 import { Link, useLocation } from 'react-router';
-import { LayoutGrid, Menu, X } from 'lucide-react';
+import { ChevronDown, LayoutGrid, Menu, X } from 'lucide-react';
+import { activityIcon, activityTone } from '~/lib/activity-icons';
+import { activityPath, rentPath, type NavCatalog } from '~/lib/catalog';
 import { appLink, config } from '~/lib/config';
 import { cn } from '~/lib/utils';
+import { rentHeading } from '~/lib/wording';
 import { buttonClass } from './button';
 import { Wordmark } from './Wordmark';
 
@@ -22,9 +25,11 @@ const isCurrent = (href: string, pathname: string) => !href.includes('#') && (hr
  * wordmark, a few links (desktop), and «Каталог» into the app (once, as the button: a gradient pill with the app's grid
  * icon). No sign-in here: that belongs to the app. Phones fold
  * the links into a menu built on <details>, so it opens even before the page has hydrated. The links fill the row's
- * height; the current page's is blue with an underline on the header's bottom edge.
+ * height; the current page's is blue with an underline on the header's bottom edge. After «Главная», «Прокат» opens
+ * the catalogue pages (activities and gear with offers, `nav` from the root loader) — on hover or keyboard focus, in
+ * CSS, so before hydration too; the phone menu lists them under the links.
  */
-export function SiteHeader() {
+export function SiteHeader({ nav }: { nav?: NavCatalog }) {
   const menu = useRef<HTMLDetailsElement>(null);
 
   const closeMenu = () => menu.current?.removeAttribute('open');
@@ -41,19 +46,11 @@ export function SiteHeader() {
           </Link>
 
           <nav aria-label="Основная навигация" className="hidden flex-1 items-stretch gap-1 self-stretch lg:flex">
-            {NAV.map((item) => (
-              <NavLink
-                key={item.label}
-                {...item}
-                className={(current) =>
-                  cn(
-                    'relative flex items-center px-3.5 text-[15px] font-semibold transition-colors outline-none focus-visible:text-primary',
-                    current
-                      ? 'text-primary after:absolute after:inset-x-3 after:bottom-0 after:h-[3px] after:rounded-t-full after:bg-primary'
-                      : 'text-muted-foreground hover:text-foreground',
-                  )
-                }
-              />
+            {NAV.map((item, i) => (
+              <Fragment key={item.label}>
+                <NavLink {...item} className={navItemClass} />
+                {i === 0 && nav ? <RentMenu nav={nav} /> : null}
+              </Fragment>
             ))}
           </nav>
 
@@ -77,7 +74,10 @@ export function SiteHeader() {
                 <Menu className="size-5 group-open:hidden" aria-hidden />
                 <X className="hidden size-5 group-open:block" aria-hidden />
               </summary>
-              <nav aria-label="Меню" className="fixed inset-x-0 top-14 border-b bg-background px-4 pt-2 pb-safe shadow-float sm:top-16 sm:rounded-b-2xl sm:border-x sm:px-5">
+              <nav
+                aria-label="Меню"
+                className="fixed inset-x-0 top-14 max-h-[calc(100dvh-3.5rem)] overflow-y-auto overscroll-contain border-b bg-background px-4 pt-2 pb-safe shadow-float sm:top-16 sm:rounded-b-2xl sm:border-x sm:px-5"
+              >
                 <ul className="grid">
                   {NAV.map((item) => (
                     <li key={item.label}>
@@ -89,6 +89,7 @@ export function SiteHeader() {
                     </li>
                   ))}
                 </ul>
+                {nav ? <RentLists nav={nav} onPick={closeMenu} compact /> : null}
                 <a href={config.providerUrl} className="mt-2 mb-1 block text-sm text-muted-foreground">
                   Кабинет продавца
                 </a>
@@ -108,5 +109,67 @@ function NavLink({ label, href, className, onClick }: { label: string; href: str
     <Link to={href} className={className(current)} onClick={onClick} aria-current={current ? 'page' : undefined}>
       {label}
     </Link>
+  );
+}
+
+const navItemClass = (current: boolean) =>
+  cn(
+    'relative flex items-center px-3.5 text-[15px] font-semibold transition-colors outline-none focus-visible:text-primary',
+    current ? 'text-primary after:absolute after:inset-x-3 after:bottom-0 after:h-[3px] after:rounded-t-full after:bg-primary' : 'text-muted-foreground hover:text-foreground',
+  );
+
+/**
+ * «Прокат ▾» in the desktop nav: a dropdown of the catalogue pages, opened by hover or keyboard focus (CSS
+ * `group-hover`/`group-focus-within`, so it works before hydration). Underlined on a /rent or /activities page.
+ */
+function RentMenu({ nav }: { nav: NavCatalog }) {
+  const { pathname } = useLocation();
+  if (!nav.activities.length && !nav.categories.length) return null;
+  const current = pathname.startsWith('/rent/') || pathname.startsWith('/activities/');
+  return (
+    <div className="group/rent relative flex">
+      <button type="button" aria-haspopup="true" className={cn(navItemClass(current), 'gap-1')}>
+        Прокат
+        <ChevronDown className="size-4 transition-transform group-focus-within/rent:rotate-180 group-hover/rent:rotate-180" aria-hidden />
+      </button>
+      {/* pt-2 bridges the gap, so moving the pointer down to the panel doesn't close it. */}
+      <div className="invisible absolute top-full left-0 z-50 pt-2 opacity-0 transition-[opacity,visibility] duration-150 group-focus-within/rent:visible group-focus-within/rent:opacity-100 group-hover/rent:visible group-hover/rent:opacity-100">
+        <div className="w-[36rem] rounded-2xl border bg-card p-4 shadow-float">
+          <RentLists nav={nav} />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/** The two lists — activities and gear — each entry with its activity's icon on its tone, linking to its page. */
+function RentLists({ nav, onPick, compact = false }: { nav: NavCatalog; onPick?: () => void; compact?: boolean }) {
+  const groups = [
+    { title: 'Занятия', items: nav.activities.map((a) => ({ key: a.slug, label: a.title, to: activityPath(a.slug), activity: a.slug })) },
+    { title: 'Снаряжение', items: nav.categories.map((c) => ({ key: c.slug, label: rentHeading(c.slug, c.title), to: rentPath(c.slug), activity: c.activity })) },
+  ].filter((g) => g.items.length);
+  return (
+    <div className={cn('grid gap-4', compact ? 'border-t pt-3 pb-1' : 'grid-cols-2')}>
+      {groups.map((g) => (
+        <div key={g.title}>
+          <p className="mb-1.5 px-2 text-xs font-semibold tracking-wide text-muted-foreground uppercase">{g.title}</p>
+          <ul className={cn('grid', compact && 'grid-cols-2')}>
+            {g.items.map((item) => {
+              const tone = activityTone(item.activity);
+              return (
+                <li key={item.key}>
+                  <Link to={item.to} onClick={onPick} className="flex min-h-11 items-center gap-2.5 rounded-xl px-2 text-sm font-medium transition-colors outline-none hover:bg-muted focus-visible:bg-muted">
+                    <span className={cn('grid size-8 shrink-0 place-items-center rounded-lg', tone.ground)}>
+                      {createElement(activityIcon(item.activity), { className: cn('size-4', tone.icon), 'aria-hidden': true })}
+                    </span>
+                    <span className="min-w-0 truncate">{item.label}</span>
+                  </Link>
+                </li>
+              );
+            })}
+          </ul>
+        </div>
+      ))}
+    </div>
   );
 }

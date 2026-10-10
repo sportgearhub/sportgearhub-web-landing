@@ -1,13 +1,13 @@
 import { createElement } from 'react';
 import { ArrowUpRight } from 'lucide-react';
 import { activityIcon, activityTone } from '~/lib/activity-icons';
-import { plural, type TaxonomyActivity } from '~/lib/catalog';
-import { appLink } from '~/lib/config';
+import { activityPath, plural, type TaxonomyActivity } from '~/lib/catalog';
+import { Link } from 'react-router';
 import { cn } from '~/lib/utils';
 
 /**
  * Every activity the platform covers, as tiles in its colour: icon, name, a few of its kinds of gear and how many there
- * are in all. An activity that can be booked now says so and opens the app's catalogue on it; the rest are shown
+ * are in all. An activity that can be booked now says so and opens its page (/activities/…); the rest are shown
  * without a link (they would open an empty page), so the grid tells what exists from what is stocked.
  */
 export function ActivityGrid({ taxonomy }: { taxonomy: TaxonomyActivity[] }) {
@@ -41,12 +41,12 @@ export function ActivityGrid({ taxonomy }: { taxonomy: TaxonomyActivity[] }) {
         return (
           <li key={a.slug}>
             {live ? (
-              <a
-                href={appLink('/', { activity: a.slug })}
+              <Link
+                to={activityPath(a.slug)}
                 className={cn(tile, 'transition-[box-shadow,transform] outline-none hover:-translate-y-0.5 hover:shadow-card focus-visible:ring-[3px] focus-visible:ring-ring/40')}
               >
                 {body}
-              </a>
+              </Link>
             ) : (
               <div className={tile}>{body}</div>
             )}
