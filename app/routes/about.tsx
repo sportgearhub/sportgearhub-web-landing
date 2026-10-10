@@ -2,7 +2,7 @@ import { ArrowRight } from 'lucide-react';
 import { buttonClass } from '~/components/button';
 import { Guarantees } from '~/components/Guarantees';
 import { HowItWorks } from '~/components/HowItWorks';
-import { PartnerBand } from '~/components/PartnerBand';
+import { SellerBand } from '~/components/SellerBand';
 import { Section } from '~/components/Section';
 import { appLink } from '~/lib/config';
 import { ABOUT, HERO } from '~/lib/content';
@@ -32,7 +32,7 @@ export default function About() {
         <HowItWorks />
       </Section>
       <Guarantees />
-      <PartnerBand />
+      <SellerBand />
     </>
   );
 }

@@ -9,7 +9,7 @@ import { Wordmark } from './Wordmark';
 const NAV = [
   { label: 'Каталог', href: appLink('/'), external: true },
   { label: 'Как это работает', href: '/#how', external: false },
-  { label: 'Партнёрам', href: '/partners', external: false },
+  { label: 'Продавцам', href: '/sellers', external: false },
   { label: 'О сервисе', href: '/about', external: false },
 ];
 
@@ -72,7 +72,7 @@ export function SiteHeader() {
                 </li>
               </ul>
               <a href={config.providerUrl} className="mt-2 mb-1 block text-sm text-muted-foreground">
-                Кабинет партнёра
+                Кабинет продавца
               </a>
             </nav>
           </details>

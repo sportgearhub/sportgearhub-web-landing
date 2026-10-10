@@ -1,7 +1,7 @@
 import { config } from '~/lib/config';
 
 /** Pages worth indexing; the catalogue and offers live in the app (app.sportgearhub.ru has its own). */
-const PAGES = ['/', '/about', '/partners', '/documents'];
+const PAGES = ['/', '/about', '/sellers', '/documents'];
 
 export function loader() {
   const urls = PAGES.map((path) => `  <url><loc>${config.siteUrl}${path === '/' ? '/' : path}</loc></url>`).join('\n');

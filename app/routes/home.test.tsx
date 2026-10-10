@@ -7,7 +7,6 @@ type HomeProps = Parameters<typeof Home>[0];
 
 const loaderData = {
   categories: [{ slug: 'bicycle', title: 'Велосипед', count: 1, activities: [{ slug: 'cycling', title: 'Велоспорт' }] }],
-  cities: [{ name: 'Уфа', slug: 'ufa' }],
   products: [
     {
       kind: 'product' as const,
@@ -15,6 +14,7 @@ const loaderData = {
       title: 'Шоссейный велосипед',
       price: 900,
       imageUrl: 'https://img.example/p1.jpg',
+      images: ['https://img.example/p1.jpg', 'https://img.example/p1-2.jpg'],
       categorySlug: 'bicycle',
       categoryTitle: 'Велосипед',
       seller: { key: 'velo', name: 'Велопрокат', description: null },
@@ -32,11 +32,11 @@ function renderHome() {
 }
 
 describe('Home', () => {
-  it('searches in the app’s catalogue, with the only city fixed', () => {
+  it('searches in the app’s catalogue, without a city', () => {
     renderHome();
     const form = screen.getByRole('search');
     expect(form).toHaveAttribute('action', 'https://app.sportgearhub.ru/');
-    expect(form.querySelector('input[name="city"]')).toHaveValue('ufa');
+    expect(form.querySelector('[name="city"]')).toBeNull();
   });
 
   it('shows real offers as cards linking to the app, priced from', () => {
@@ -45,6 +45,8 @@ describe('Home', () => {
     const link = within(offers).getByRole('link', { name: /Шоссейный велосипед/ });
     expect(link).toHaveAttribute('href', 'https://app.sportgearhub.ru/offers/p1');
     expect(link).toHaveTextContent('от 900');
+    expect(link).not.toHaveTextContent('Велопрокат');
+    expect(link.querySelectorAll('img')).toHaveLength(3); // both photos, plus the first again for the endless loop
   });
 
   it('shows the category price without a count while offers are few', () => {

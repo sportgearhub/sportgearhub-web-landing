@@ -18,6 +18,12 @@ headers.Referrer-Policy = "strict-origin-when-cross-origin"
 source = "/assets/**"
 headers.Cache-Control = "public, max-age=31536000, immutable"
 
+# «Партнёрам» became «Продавцам».
+[[advanced.redirects]]
+source = "/partners"
+destination = "/sellers"
+kind = 301
+
 # The customer app moved to app.sportgearhub.ru: links shared before the move keep working.
 [[advanced.redirects]]
 source = "/{offers,providers,bookings,checkout,account,auth,preview}/**"

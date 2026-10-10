@@ -26,12 +26,12 @@ export function SiteFooter() {
             Войти
           </a>
         </FooterColumn>
-        <FooterColumn title="Партнёрам">
-          <Link className={linkClass} to="/partners">
-            Стать партнёром
+        <FooterColumn title="Продавцам">
+          <Link className={linkClass} to="/sellers">
+            Как подключиться
           </Link>
           <a className={linkClass} href={config.providerUrl}>
-            Кабинет партнёра
+            Кабинет продавца
           </a>
           <a className={linkClass} href={config.docsUrl}>
             Документация

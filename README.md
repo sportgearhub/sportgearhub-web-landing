@@ -2,7 +2,7 @@
 
 The public site at **sportgearhub.ru**: the landing (categories, real offers, collections, rental partners, how it
 works, guarantees, FAQ), «О сервисе»,
-«Партнёрам», «Документы». Everything you *do* — browse the catalogue, open an offer, sign in, book — happens in the
+«Продавцам», «Документы». Everything you *do* — browse the catalogue, open an offer, sign in, book — happens in the
 customer app at **app.sportgearhub.ru**; every action here links there.
 
 React + TypeScript + Tailwind v4, built with React Router (framework mode) and **pre-rendered**: `npm run build`
@@ -27,11 +27,11 @@ Settings are build-time Vite variables with production defaults (see `.env.examp
 | `VITE_SITE_URL` | `https://sportgearhub.ru` | canonical URLs, Open Graph, sitemap |
 | `VITE_APP_URL` | `https://app.sportgearhub.ru` | every link into the app (catalogue, offers, sign-in) |
 | `VITE_API_BASE_URL` | `https://api.sportgearhub.ru` | build-time reads, product photo URLs |
-| `VITE_PROVIDER_URL` | `https://crm.sportgearhub.ru` | partner sign-up |
+| `VITE_PROVIDER_URL` | `https://crm.sportgearhub.ru` | seller sign-up and console |
 
 ## How the data gets in
 
-`app/routes/home.tsx` has a `loader` that runs **at build time** (`app/lib/api.server.ts`): rental categories, cities
+`app/routes/home.tsx` has a `loader` that runs **at build time** (`app/lib/api.server.ts`): rental categories
 and the newest products. The browser never calls the API from this site. If the API is down during a build, the page
 still builds with curated content (a warning in the log) instead of failing.
 
@@ -43,7 +43,7 @@ every push to `production`. Run the workflow by hand to publish new offers soone
 ```
 app/
   root.tsx              document, header/footer, 404 boundary
-  routes.ts             /, /about, /partners, /documents, /404, /sitemap.xml
+  routes.ts             /, /about, /sellers, /documents, /404, /sitemap.xml
   routes/               one module per page (loader + meta + component)
   components/           header, footer, search, offer cards, categories, collections, how-it-works, FAQ…
   lib/

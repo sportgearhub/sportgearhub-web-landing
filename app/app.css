@@ -95,11 +95,40 @@
   }
 }
 
-/* Swipeable row that bleeds to the screen edge on phones. */
+/*
+ * Swipeable row that bleeds to the screen edge on phones. Browsers drop a scroller's end padding, so a 1px spacer after
+ * the last item keeps a gutter (the row's gap) on the right once scrolled to the end.
+ */
 @utility snap-row {
-  @apply -mx-4 flex snap-x snap-mandatory gap-3 overflow-x-auto px-4 scrollbar-hide sm:mx-0 sm:px-0;
+  @apply -mx-4 flex snap-x snap-mandatory scroll-px-4 gap-3 overflow-x-auto px-4 scrollbar-hide sm:mx-0 sm:scroll-px-0 sm:px-0;
+  &::after {
+    content: "";
+    flex: 0 0 1px;
+  }
+  @media (width >= 40rem) {
+    &::after {
+      content: none;
+    }
+  }
 }
 
 @utility pb-safe {
   padding-bottom: max(1rem, env(safe-area-inset-bottom));
+}
+
+/* Slides in once the page has scrolled past the hero; without scroll-driven animations it's simply always there. */
+@keyframes cta-reveal {
+  from {
+    translate: 0 100%;
+    opacity: 0;
+  }
+}
+@utility cta-reveal {
+  @media (prefers-reduced-motion: no-preference) {
+    @supports (animation-timeline: scroll()) {
+      animation: cta-reveal linear both;
+      animation-timeline: scroll(root);
+      animation-range: 0 480px;
+    }
+  }
 }

@@ -35,6 +35,7 @@ const card = (id: string, extra: Partial<ProductCard> = {}): ProductCard => ({
   title: id,
   price: 100,
   imageUrl: `/${id}.jpg`,
+  images: [`/${id}.jpg`],
   categorySlug: 'bicycle',
   categoryTitle: 'Велосипед',
   seller: null,
@@ -59,6 +60,13 @@ describe('toProductCards', () => {
     );
     expect(cards.map((c) => c.imageUrl)).toEqual(['https://api.example/m/1', 'https://cdn.example/b.jpg']);
     expect(cards.map((c) => c.seller?.key)).toEqual(['s-1', 'velo']);
+  });
+
+  it('keeps every photo in order for the card carousel, without repeats, up to five', () => {
+    const images = [3, 1, 2, 2, 4, 5, 6].map((n, i) => ({ url: `/m/${n}`, sort_order: n * 10 + i }));
+    const [cardA] = toProductCards([wire('a', { images })], API);
+    expect(cardA!.images).toEqual([1, 2, 3, 4, 5].map((n) => `${API}/m/${n}`));
+    expect(toProductCards([wire('b')], API)[0]!.images).toEqual([`${API}/api/v1/media/b`]);
   });
 
   it('leaves absolute URLs alone', () => {

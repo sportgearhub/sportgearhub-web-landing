@@ -36,7 +36,10 @@ export type ProductCard = {
   id: string;
   title: string;
   price: number | null;
+  /** The main photo: the first of `images`. */
   imageUrl: string;
+  /** Every photo in the seller's order, at most MAX_CARD_IMAGES (the card cycles through them). */
+  images: string[];
   categorySlug: string | null;
   categoryTitle: string | null;
   seller: SellerRef | null;
@@ -55,15 +58,20 @@ export function resolveMediaUrl(url: string | null | undefined, apiBaseUrl: stri
   return `${apiBaseUrl}${url.startsWith('/') ? '' : '/'}${url}`;
 }
 
+/** A card shows this many photos at most: more dots stop reading as dots. */
+export const MAX_CARD_IMAGES = 5;
+
 /** Products without a photo are left out: the wall is pictures first. */
 export function toProductCards(products: WireProduct[], apiBaseUrl: string): ProductCard[] {
   return products.flatMap((p) => {
-    const first = [...(p.images ?? [])].sort((a, b) => a.sort_order - b.sort_order)[0]?.url ?? p.media_preview_url;
-    const imageUrl = resolveMediaUrl(first, apiBaseUrl);
+    const sorted = [...(p.images ?? [])].sort((a, b) => a.sort_order - b.sort_order).map((i) => i.url);
+    const urls = (sorted.length ? sorted : [p.media_preview_url]).map((u) => resolveMediaUrl(u, apiBaseUrl)).filter((u): u is string => !!u);
+    const images = [...new Set(urls)].slice(0, MAX_CARD_IMAGES);
+    const imageUrl = images[0];
     if (!imageUrl) return [];
     const seller = p.seller ? { key: p.seller.slug ?? p.seller.seller_id, name: p.seller.display_name, description: p.seller.description } : null;
     return [
-      { kind: 'product' as const, id: p.product_id, title: p.title, price: p.price, imageUrl, categorySlug: p.category?.slug ?? null, categoryTitle: p.category?.title ?? null, seller },
+      { kind: 'product' as const, id: p.product_id, title: p.title, price: p.price, imageUrl, images, categorySlug: p.category?.slug ?? null, categoryTitle: p.category?.title ?? null, seller },
     ];
   });
 }
@@ -120,6 +128,9 @@ export function sellersOf(products: ProductCard[]): (SellerRef & { offers: numbe
   }
   return [...byKey.values()].sort((a, b) => b.offers - a.offers);
 }
+
+/** Categories with offers right now: an empty one would open an empty catalogue. */
+export const liveCategories = (categories: Category[]): Category[] => categories.filter((c) => c.count > 0);
 
 /** Curated tiles whose activity really has offers now (never a collection that opens an empty catalogue). */
 export function liveCollections(showcase: ShowcaseCard[], categories: Category[]): ShowcaseCard[] {
