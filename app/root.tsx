@@ -6,7 +6,12 @@ import { NotFound } from './components/NotFound';
 import './app.css';
 
 export const links: Route.LinksFunction = () => [
-  { rel: 'icon', type: 'image/svg+xml', href: '/favicon.svg' },
+  // The icon set (from assets/logo-rounded-square): ICO for old browsers and anything asking /favicon.ico (sizes keeps
+  // modern browsers on the SVG), the SVG, the 180px full-bleed one for iOS, and the manifest's PNGs.
+  { rel: 'icon', href: '/favicon.ico', sizes: '32x32' },
+  { rel: 'icon', type: 'image/svg+xml', href: '/icon.svg' },
+  { rel: 'apple-touch-icon', href: '/apple-touch-icon.png' },
+  { rel: 'manifest', href: '/site.webmanifest' },
   // Photos come from these hosts: connect early.
   { rel: 'preconnect', href: 'https://images.pexels.com' },
 ];

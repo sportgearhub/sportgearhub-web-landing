@@ -52,7 +52,7 @@ export const meta: Route.MetaFunction = () => [
     'script:ld+json': {
       '@context': 'https://schema.org',
       '@graph': [
-        { '@type': 'Organization', name: 'Sportgearhub', url: `${config.siteUrl}/`, logo: `${config.siteUrl}/favicon.svg` },
+        { '@type': 'Organization', name: 'Sportgearhub', url: `${config.siteUrl}/`, logo: `${config.siteUrl}/icon-512.png` },
         {
           '@type': 'WebSite',
           name: 'Sportgearhub',

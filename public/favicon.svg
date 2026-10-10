@@ -1,6 +1,0 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none" role="img" aria-label="Sportgearhub">
-  <rect width="64" height="64" rx="16" fill="#0F172A" />
-  <path d="M18 30C18 23.373 23.373 18 30 18H34C40.627 18 46 23.373 46 30V34C46 40.627 40.627 46 34 46H30C23.373 46 18 40.627 18 34V30Z" fill="#38BDF8" />
-  <path d="M25 31.5C25 27.91 27.91 25 31.5 25H32.5C36.09 25 39 27.91 39 31.5V32.5C39 36.09 36.09 39 32.5 39H31.5C27.91 39 25 36.09 25 32.5V31.5Z" fill="#E2E8F0" />
-  <circle cx="32" cy="32" r="3" fill="#0F172A" />
-</svg>
